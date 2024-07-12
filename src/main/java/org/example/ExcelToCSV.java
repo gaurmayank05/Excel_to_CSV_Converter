@@ -126,7 +126,7 @@ public class ExcelToCSV {
      *         Returns an empty list if excelData is empty or null.
      */
 
-    public static List<List<String>> transposeData(List<List<String>> excelData ) {
+    private List<List<String>> transposeData(List<List<String>> excelData ) {
 
         if(excelData == null)
             return null;
@@ -270,7 +270,7 @@ public class ExcelToCSV {
      * @return A string representation of the cell value.
      */
 
-    public static String getCellValueasString(Cell cell) {
+    private String getCellValueasString(Cell cell) {
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue();
@@ -297,7 +297,7 @@ public class ExcelToCSV {
      * @return The escaped cell value formatted for CSV.
      */
 
-    public static String especialCharacters(String cellValue) {
+    private String especialCharacters(String cellValue) {
         cellValue = cellValue.replaceAll("\"", "\"\"");
         String regex = "[,\\n'/\\\\\"]";
         Pattern pattern = Pattern.compile(regex);
@@ -316,7 +316,7 @@ public class ExcelToCSV {
      * @return A list of configurableExcel objects populated with data from configurableExcelData.
      */
 
-    public List<configurableExcel> fillSheetParameter(List<List<String>>configurableExcelData) {
+    private List<configurableExcel> fillSheetParameter(List<List<String>>configurableExcelData) {
         List<configurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
             List<String> rowData = configurableExcelData.get(rowIndex);
