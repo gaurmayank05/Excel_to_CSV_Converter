@@ -19,15 +19,20 @@ public class ExcelToCSV {
      */
 
     public void ExcelToCSVConverter(String configurableExcelPath, String inputExcelPath) throws IOException {
-        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,"na");
+        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,null);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
 
         for( ConfigurableExcel parameters : queryConfigList  ){
                 List<List<String>> excelData;
-                if (parameters.getSheetRange().equals("na")){
-                    excelData = queryExcelData(inputExcelPath, parameters);
-                }else{
+//                if (parameters.getSheetRange().equals("na")){
+//                    excelData = queryExcelData(inputExcelPath, parameters);
+//                }
+
+            if (parameters.getSheetRange().isEmpty()|| parameters.getSheetRange()==null){
+                excelData = queryExcelData(inputExcelPath, parameters);
+            }
+                else{
                     excelData = specificRange(inputExcelPath, parameters);
                 }
 
@@ -87,7 +92,12 @@ public class ExcelToCSV {
             }else {
                 sheet = workbook.getSheet(parameters.getSheetName());
             }
-            if (parameters.isTranspose() && parameters.getSheetRange().equals("na")){
+//            if (parameters.isTranspose() && parameters.getSheetRange().equals("na")){
+//
+//                parameters.setStartRow(2);
+//            }
+            if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
+            {
                 parameters.setStartRow(2);
             }
             if (parameters.getEndRow()==-1){
@@ -107,9 +117,10 @@ public class ExcelToCSV {
                         Cell cell = row.getCell(cellIndex);
                         if (cell != null) {
                             rowData.add(getCellValueasString(cell).trim());
-                        }else{
-                            rowData.add("");
                         }
+//                        }else{
+//                            rowData.add("");
+//                        }
                     }
                 }
                 excelData.add(rowData);
@@ -242,21 +253,26 @@ public class ExcelToCSV {
     private List<List<String>> specificRange(String inputExcelPath, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
-        String[] range = parameters.getSheetRange().split(",");
-        for (String rangeIndex : range) {
-            startRow = Integer.parseInt(rangeIndex.split("-")[0].trim()) - 1;
-            if (rangeIndex.contains("-")){
-                endRow = Integer.parseInt(rangeIndex.split("-")[1].trim()) - 1;
-            }else{
-                endRow = startRow;
-            }
-            parameters.setStartRow(startRow);
-            parameters.setEndRow(endRow);
-            List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
-            if (excelData == null) {
-                excelData = tempExcelData;
-            } else {
-                excelData.addAll(tempExcelData);
+        if(parameters.getSheetRange().contains(",")) {
+            String[] range = parameters.getSheetRange().split(",");
+            for (String rangeIndex : range) {
+                if (parameters.getSheetRange().contains("-")) {
+
+                    startRow = Integer.parseInt(rangeIndex.split("-")[0].trim()) - 1;
+                    if (rangeIndex.contains("-")) {
+                        endRow = Integer.parseInt(rangeIndex.split("-")[1].trim()) - 1;
+                    } else {
+                        endRow = startRow;
+                    }
+                    parameters.setStartRow(startRow);
+                    parameters.setEndRow(endRow);
+                    List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
+                    if (excelData == null) {
+                        excelData = tempExcelData;
+                    } else {
+                        excelData.addAll(tempExcelData);
+                    }
+                }
             }
         }
         return excelData;
@@ -320,6 +336,7 @@ public class ExcelToCSV {
         List<ConfigurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
             List<String> rowData = configurableExcelData.get(rowIndex);
+
             ConfigurableExcel parameters = new ConfigurableExcel(0, -1, 1, -1, rowData.get(0), rowData.get(1), Boolean.parseBoolean(rowData.get(2)), Boolean.parseBoolean(rowData.get(3)), rowData.get(4));
             queryConfigList.add(parameters);
         }
@@ -328,12 +345,13 @@ public class ExcelToCSV {
 
     public static void main(String[] args) {
         ExcelToCSV csvConverter = new ExcelToCSV();
-        String configurableExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD_TO_CSV.xlsx";
-        String inputExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD - Internal.xlsx";
+        String configurableExcelPath = "D://sourceFolder//CSD_TO_CSV.xlsx";
+        String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
         try {
             csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
             System.out.println("Excel is converted into CSV.");
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new NullPointerException();
         }
     }

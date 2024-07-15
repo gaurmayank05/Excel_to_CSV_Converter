@@ -9,7 +9,7 @@ public class ConfigurableExcel {
     private final String sheetPath;
     private final boolean isTranspose;
     private final boolean isComment;
-    private final String sheetRange;
+    private  final String sheetRange;
 
     public int getStartRow() {
         return startRow;
