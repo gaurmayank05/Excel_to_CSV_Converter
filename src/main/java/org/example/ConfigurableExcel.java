@@ -10,6 +10,7 @@ public class ConfigurableExcel {
     private final boolean isTranspose;
     private final boolean isComment;
     private final String sheetRange;
+    private final boolean isDeleteAvailable;
 
     public int getStartRow() {
         return startRow;
@@ -59,7 +60,11 @@ public class ConfigurableExcel {
         return sheetRange;
     }
 
-    public ConfigurableExcel(int startRow, int endRow, int startColumn, int endColumn, String sheetName, String sheetPath, boolean isTranspose, boolean isComment, String sheetRange) {
+    public boolean isDeleteAvailable() {
+        return isDeleteAvailable;
+    }
+
+    public ConfigurableExcel(int startRow, int endRow, int startColumn, int endColumn, String sheetName, String sheetPath, boolean isTranspose, boolean isComment, String sheetRange, boolean isDeleteAvailable) {
         this.startRow = startRow;
         this.endRow = endRow;
         this.startColumn = startColumn;
@@ -69,5 +74,6 @@ public class ConfigurableExcel {
         this.isTranspose = isTranspose;
         this.isComment = isComment;
         this.sheetRange = sheetRange;
+        this.isDeleteAvailable = isDeleteAvailable;
     }
 }
