@@ -19,7 +19,7 @@ public class ExcelToCSV {
      */
 
     public void ExcelToCSVConverter(String configurableExcelPath, String inputExcelPath) throws IOException {
-        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,"na");
+        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,"na", false);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
 
@@ -30,7 +30,9 @@ public class ExcelToCSV {
                 }else{
                     excelData = specificRange(inputExcelPath, parameters);
                 }
-
+                if (parameters.isDeleteAvailable()){
+                    excelData.add(addDeleteColumn(excelData));
+                }
                 if (parameters.isTranspose()) {
                     excelData = transposeData(excelData);
                 }
@@ -128,11 +130,7 @@ public class ExcelToCSV {
 
     private List<List<String>> transposeData(List<List<String>> excelData ) {
 
-        if(excelData == null)
-            return null;
-
         List<List<String>> transposedData = new ArrayList<>();
-        //noinspection ConstantValue
         if (excelData == null || excelData.isEmpty()){
             return transposedData;
         }
@@ -154,6 +152,27 @@ public class ExcelToCSV {
             transposedData.add(row);
         }
         return transposedData;
+    }
+
+    private List<String> addDeleteColumn(List<List<String>> excelData) {
+        List<String> addDeleteColumn = new ArrayList<>();
+        if (excelData == null || excelData.isEmpty()){
+            return addDeleteColumn;
+        }
+        int colCount = 0;
+        for (List<String> row : excelData) {
+            if (row.size() > colCount) {
+                colCount = row.size();
+            }
+        }
+        for (int j = 0; j < colCount; j++) {
+            if (j==0) {
+                addDeleteColumn.add("deleted");
+            }else{
+                addDeleteColumn.add("False");
+            }
+        }
+        return addDeleteColumn;
     }
 
     /**
@@ -320,7 +339,9 @@ public class ExcelToCSV {
         List<ConfigurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
             List<String> rowData = configurableExcelData.get(rowIndex);
-            ConfigurableExcel parameters = new ConfigurableExcel(0, -1, 1, -1, rowData.get(0), rowData.get(1), Boolean.parseBoolean(rowData.get(2)), Boolean.parseBoolean(rowData.get(3)), rowData.get(4));
+            ConfigurableExcel parameters = new ConfigurableExcel(0, -1, 1, -1, rowData.get(0),
+                    rowData.get(1), Boolean.parseBoolean(rowData.get(2)), Boolean.parseBoolean(rowData.get(3)), rowData.get(4),
+                    Boolean.parseBoolean(rowData.get(5)));
             queryConfigList.add(parameters);
         }
         return queryConfigList;
