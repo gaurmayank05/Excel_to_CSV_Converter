@@ -229,10 +229,13 @@ public class ExcelToCSV {
     private void standardizedHeader(BufferedWriter writer, List<List<String>> excelData) throws IOException {
         List<String> excelHeaderData = excelData.get(0);
 
+
         for (int columnIndex = 0; columnIndex < excelHeaderData.size(); columnIndex++) {
             String headerData = excelHeaderData.get(columnIndex);
             if (headerData != null) {
-                headerData = headerData.toLowerCase().replaceAll(" ", "_");
+
+                headerData = headerData.replace("*", "").toLowerCase().replaceAll("\\s+", "_");
+
             }
             writer.append(headerData != null ? headerData : "");
             if (columnIndex < excelHeaderData.size() - 1) writer.append(",");
