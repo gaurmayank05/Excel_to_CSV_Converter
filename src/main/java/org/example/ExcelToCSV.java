@@ -24,17 +24,17 @@ public class ExcelToCSV {
         List<configurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
 
         for( configurableExcel parameters : queryConfigList  ){
-                List<List<String>> excelData;
-                if (parameters.getSheetRange().equals("na")){
-                    excelData = queryExcelData(inputExcelPath, parameters);
-                }else{
-                    excelData = specificRange(inputExcelPath, parameters);
-                }
+            List<List<String>> excelData;
+            if (parameters.getSheetRange().equals("na")){
+                excelData = queryExcelData(inputExcelPath, parameters);
+            }else{
+                excelData = specificRange(inputExcelPath, parameters);
+            }
 
-                if (parameters.isTranspose()) {
-                    excelData = transposeData(excelData);
-                }
-                writeCSV( parameters, excelData);
+            if (parameters.isTranspose()) {
+                excelData = transposeData(excelData);
+            }
+            writeCSV( parameters, excelData);
         }
     }
 
@@ -328,8 +328,8 @@ public class ExcelToCSV {
 
     public static void main(String[] args) {
         ExcelToCSV csvConverter = new ExcelToCSV();
-        String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
-        String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
+        String configurableExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD_TO_CSV.xlsx";
+        String inputExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD - Internal.xlsx";
         try {
             csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
             System.out.println("Excel is converted into CSV.");
