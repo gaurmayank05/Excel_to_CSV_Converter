@@ -94,10 +94,6 @@ public class ExcelToCSV {
             }else {
                 sheet = workbook.getSheet(parameters.getSheetName());
             }
-//            if (parameters.isTranspose() && parameters.getSheetRange().equals("na")){
-//
-//                parameters.setStartRow(2);
-//            }
             if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
             {
                 parameters.setStartRow(2);
@@ -120,9 +116,6 @@ public class ExcelToCSV {
                         if (cell != null) {
                             rowData.add(getCellValueasString(cell).trim());
                         }
-//                        }else{
-//                            rowData.add("");
-//                        }
                     }
                 }
                 excelData.add(rowData);
