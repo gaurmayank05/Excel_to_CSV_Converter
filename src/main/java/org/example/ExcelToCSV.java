@@ -26,9 +26,6 @@ public class ExcelToCSV {
 
         for( ConfigurableExcel parameters : queryConfigList  ){
                 List<List<String>> excelData;
-//                if (parameters.getSheetRange().equals("na")){
-//                    excelData = queryExcelData(inputExcelPath, parameters);
-//                }
 
             if (parameters.getSheetRange().isEmpty()|| parameters.getSheetRange()==null){
                 excelData = queryExcelData(inputExcelPath, parameters);
@@ -159,6 +156,11 @@ public class ExcelToCSV {
         return transposedData;
     }
 
+    /**
+     * Add an extra Deleted Column in some file if needed
+     * @param excelData The original two-dimensional list of strings in which an extra Delete column need to be added.
+     * @return A list of Excel Data with an extra Delete Column along its default value 'False'.
+     */
     private List<String> addDeleteColumn(List<List<String>> excelData) {
         List<String> addDeleteColumn = new ArrayList<>();
         if (excelData == null || excelData.isEmpty()){
