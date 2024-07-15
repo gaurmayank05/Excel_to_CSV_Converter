@@ -19,22 +19,22 @@ public class ExcelToCSV {
      */
 
     public void ExcelToCSVConverter(String configurableExcelPath, String inputExcelPath) throws IOException {
-        configurableExcel excelQueryParameters = new configurableExcel(0,-1,1,-1,null,null,false,true,"na");
+        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,"na");
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
-        List<configurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
+        List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
 
-        for( configurableExcel parameters : queryConfigList  ){
-            List<List<String>> excelData;
-            if (parameters.getSheetRange().equals("na")){
-                excelData = queryExcelData(inputExcelPath, parameters);
-            }else{
-                excelData = specificRange(inputExcelPath, parameters);
-            }
+        for( ConfigurableExcel parameters : queryConfigList  ){
+                List<List<String>> excelData;
+                if (parameters.getSheetRange().equals("na")){
+                    excelData = queryExcelData(inputExcelPath, parameters);
+                }else{
+                    excelData = specificRange(inputExcelPath, parameters);
+                }
 
-            if (parameters.isTranspose()) {
-                excelData = transposeData(excelData);
-            }
-            writeCSV( parameters, excelData);
+                if (parameters.isTranspose()) {
+                    excelData = transposeData(excelData);
+                }
+                writeCSV( parameters, excelData);
         }
     }
 
@@ -46,7 +46,7 @@ public class ExcelToCSV {
      *         or an empty string if the sheet path is null.
      */
 
-    private String createDirectory(configurableExcel parameter) {
+    private String createDirectory(ConfigurableExcel parameter) {
         String outputDirectory = "D://";
         String absolutePath = "";
 
@@ -77,7 +77,7 @@ public class ExcelToCSV {
      * @throws IOException If an I/O error occurs while reading the Excel file.
      */
 
-    private List<List<String>> queryExcelData(String getExcelPath, configurableExcel parameters) throws IOException {
+    private List<List<String>> queryExcelData(String getExcelPath, ConfigurableExcel parameters) throws IOException {
         List<List<String>> excelData = new ArrayList<>();
         try (FileInputStream excelFile = new FileInputStream(getExcelPath);
              Workbook workbook = new XSSFWorkbook(excelFile)) {
@@ -164,7 +164,7 @@ public class ExcelToCSV {
      * @return The maximum column index found in the specified row range of the sheet, minus one.
      */
 
-    private int maxColumn(Sheet sheet, configurableExcel parameter) {
+    private int maxColumn(Sheet sheet, ConfigurableExcel parameter) {
         int endColumn = 0;
         for (int rowIndex = parameter.getStartRow(); rowIndex <= parameter.getEndRow(); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
@@ -182,7 +182,7 @@ public class ExcelToCSV {
      * @throws IOException If an I/O error occurs while writing the Excel file into CSV file.
      */
 
-    private void writeCSV(configurableExcel parameters, List<List<String>> excelData) throws IOException {
+    private void writeCSV(ConfigurableExcel parameters, List<List<String>> excelData) throws IOException {
 
         if (parameters.getSheetPath() != null) {
             String csvFilePath = createDirectory(parameters);
@@ -239,7 +239,7 @@ public class ExcelToCSV {
      * @throws IOException If an I/O error occurs while reading the Excel file or querying data.
      */
 
-    private List<List<String>> specificRange(String inputExcelPath, configurableExcel parameters) throws IOException {
+    private List<List<String>> specificRange(String inputExcelPath, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
         String[] range = parameters.getSheetRange().split(",");
@@ -316,11 +316,11 @@ public class ExcelToCSV {
      * @return A list of configurableExcel objects populated with data from configurableExcelData.
      */
 
-    private List<configurableExcel> fillSheetParameter(List<List<String>>configurableExcelData) {
-        List<configurableExcel> queryConfigList = new ArrayList<>();
+    private List<ConfigurableExcel> fillSheetParameter(List<List<String>>configurableExcelData) {
+        List<ConfigurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
             List<String> rowData = configurableExcelData.get(rowIndex);
-            configurableExcel parameters = new configurableExcel(0, -1, 1, -1, rowData.get(0), rowData.get(1), Boolean.parseBoolean(rowData.get(2)), Boolean.parseBoolean(rowData.get(3)), rowData.get(4));
+            ConfigurableExcel parameters = new ConfigurableExcel(0, -1, 1, -1, rowData.get(0), rowData.get(1), Boolean.parseBoolean(rowData.get(2)), Boolean.parseBoolean(rowData.get(3)), rowData.get(4));
             queryConfigList.add(parameters);
         }
         return queryConfigList;
@@ -328,8 +328,8 @@ public class ExcelToCSV {
 
     public static void main(String[] args) {
         ExcelToCSV csvConverter = new ExcelToCSV();
-        String configurableExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD_TO_CSV.xlsx";
-        String inputExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD - Internal.xlsx";
+        String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
+        String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
         try {
             csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
             System.out.println("Excel is converted into CSV.");

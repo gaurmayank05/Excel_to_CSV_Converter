@@ -1,6 +1,6 @@
 package org.example;
 
-public class configurableExcel {
+public class ConfigurableExcel {
     private int startRow;
     private int endRow;
     private final int startColumn;
@@ -59,7 +59,7 @@ public class configurableExcel {
         return sheetRange;
     }
 
-    public configurableExcel(int startRow, int endRow, int startColumn, int endColumn, String sheetName, String sheetPath, boolean isTranspose, boolean isComment, String sheetRange) {
+    public ConfigurableExcel(int startRow, int endRow, int startColumn, int endColumn, String sheetName, String sheetPath, boolean isTranspose, boolean isComment, String sheetRange) {
         this.startRow = startRow;
         this.endRow = endRow;
         this.startColumn = startColumn;
