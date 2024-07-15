@@ -8,9 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.logging.Logger;
 
 public class ExcelToCSV {
-
+    private static final Logger logger = Logger.getLogger(ExcelToCSV.class.getName());
     /**
      *
      * @param configurableExcelPath used to store the path of Configurable Excel
@@ -223,7 +224,8 @@ public class ExcelToCSV {
             String headerData = excelHeaderData.get(columnIndex);
             if (headerData != null) {
 
-                headerData = headerData.replace("*", "").toLowerCase().replaceAll("\\s+", "_");
+                headerData = headerData.replace("*", "").toLowerCase().replaceAll("\\s+", "_")
+                        .replaceAll("_+$", "");
 
             }
             writer.append(headerData != null ? headerData : "");
@@ -330,12 +332,13 @@ public class ExcelToCSV {
     }
 
     public static void main(String[] args) {
+
         ExcelToCSV csvConverter = new ExcelToCSV();
-        String configurableExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD_TO_CSV.xlsx";
-        String inputExcelPath = "C://Users//user//OneDrive - Drogevate Solutions Private Limited//Csv_Source_Folder//CSD - Internal.xlsx";
+        String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
+        String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
         try {
             csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
-            System.out.println("Excel is converted into CSV.");
+            logger.info("EXCEL To CSV CONVERSION SUCCESSFULLY");
         } catch (IOException e) {
             throw new NullPointerException();
         }
