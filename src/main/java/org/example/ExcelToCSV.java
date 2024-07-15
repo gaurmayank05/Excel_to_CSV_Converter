@@ -245,8 +245,8 @@ public class ExcelToCSV {
         for (int columnIndex = 0; columnIndex < excelHeaderData.size(); columnIndex++) {
             String headerData = excelHeaderData.get(columnIndex);
             if (headerData != null) {
-
-                headerData = headerData.replace("*", "").toLowerCase().replaceAll("\\s+", "_");
+                headerData = headerData.replace("*", "").trim();
+                headerData = headerData.toLowerCase().replaceAll("\\s+", "_");
 
             }
             writer.append(headerData != null ? headerData : "");
