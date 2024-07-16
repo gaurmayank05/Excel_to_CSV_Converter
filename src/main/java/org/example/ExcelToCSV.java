@@ -15,8 +15,9 @@ public class ExcelToCSV {
     private static final Logger logger = Logger.getLogger(ExcelToCSV.class.getName());
 
     /**
+     *
      * @param configurableExcelPath used to store the path of Configurable Excel
-     * @param inputExcelPath        used to store the path of Excel which need to converted into CSV files.
+     * @param inputExcelPath used to store the path of Excel which need to converted into CSV files.
      * @throws IOException If an I/O error occurs while converting the Excel file.
      */
 
@@ -73,7 +74,7 @@ public class ExcelToCSV {
      *
      * @param parameter The configurableExcel object containing sheet information.
      * @return The absolute path of the directory where the file will be saved,
-     * or an empty string if the sheet path is null.
+     *         or an empty string if the sheet path is null.
      */
 
     private String createDirectory(ConfigurableExcel parameter) {
@@ -114,17 +115,18 @@ public class ExcelToCSV {
             Sheet sheet;
             if (workbook.getNumberOfSheets() == 1) {
                 sheet = workbook.getSheetAt(0);
-            } else {
+            }else {
                 sheet = workbook.getSheet(parameters.getSheetName());
             }
-            if (parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null)) {
+            if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
+            {
                 parameters.setStartRow(2);
             }
-            if (parameters.getEndRow() == -1) {
+            if (parameters.getEndRow()==-1){
                 parameters.setEndRow(sheet.getLastRowNum());
             }
-            if (parameters.getEndColumn() == -1) {
-                parameters.setEndColumn(maxColumn(sheet, parameters));
+            if (parameters.getEndColumn()==-1){
+                parameters.setEndColumn(maxColumn(sheet,parameters));
             }
             if (parameters.isComment()) {
                 parameters.setEndColumn(parameters.getEndColumn() + 1);
@@ -182,7 +184,6 @@ public class ExcelToCSV {
 
     /**
      * Add an extra Deleted Column in some file if needed
-     *
      * @param excelData The original two-dimensional list of strings in which an extra Delete column need to be added.
      * @return A list of Excel Data with an extra Delete Column along its default value 'False'.
      */
@@ -227,8 +228,9 @@ public class ExcelToCSV {
     }
 
     /**
+     *
      * @param parameters The configurableExcel object containing parameters for particular sheet.
-     * @param excelData  The original two-dimensional list of strings which used to store the Excel Data.
+     * @param excelData The original two-dimensional list of strings which used to store the Excel Data.
      * @throws IOException If an I/O error occurs while writing the Excel file into CSV file.
      */
 
@@ -316,6 +318,18 @@ public class ExcelToCSV {
                         excelData.addAll(tempExcelData);
                     }
                 }
+                else {
+                    startRow=Integer.parseInt(rangeIndex)-1;
+                    endRow=startRow;
+                    parameters.setStartRow(startRow);
+                    parameters.setEndRow(endRow);
+                    List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
+                    if (excelData == null) {
+                        excelData = tempExcelData;
+                    } else {
+                        excelData.addAll(tempExcelData);
+                    }
+                }
             }
         }
         return excelData;
@@ -387,8 +401,9 @@ public class ExcelToCSV {
         return queryConfigList;
     }
 
+    public static void main(String[] args) {
 
-    public static void main (String[]args){
+
         ExcelToCSV csvConverter = new ExcelToCSV();
         String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
         String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
@@ -403,4 +418,4 @@ public class ExcelToCSV {
 }
     }
 
-
+}
