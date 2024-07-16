@@ -270,7 +270,7 @@ public class ExcelToCSV {
     private List<List<String>> specificRange(String inputExcelPath, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
-        if(parameters.getSheetRange().contains(",")) {
+//        if(parameters.getSheetRange().contains(",")) {
             String[] range = parameters.getSheetRange().split(",");
             for (String rangeIndex : range) {
                 if (parameters.getSheetRange().contains("-")) {
@@ -290,8 +290,22 @@ public class ExcelToCSV {
                         excelData.addAll(tempExcelData);
                     }
                 }
+                else {
+                    startRow=Integer.parseInt(rangeIndex)-1;
+                    endRow=startRow;
+                    parameters.setStartRow(startRow);
+                    parameters.setEndRow(endRow);
+                    List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
+                    if (excelData == null) {
+                        excelData = tempExcelData;
+                    } else {
+                        excelData.addAll(tempExcelData);
+                    }
+                }
             }
-        }
+
+
+//        }
         return excelData;
     }
 
