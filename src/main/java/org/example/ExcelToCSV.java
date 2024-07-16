@@ -10,43 +10,60 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ExcelToCSV {
+
     /**
-     *
      * @param configurableExcelPath used to store the path of Configurable Excel
-     * @param inputExcelPath used to store the path of Excel which need to converted into CSV files.
+     * @param inputExcelPath        used to store the path of Excel which need to converted into CSV files.
      * @throws IOException If an I/O error occurs while converting the Excel file.
      */
 
     public void ExcelToCSVConverter(String configurableExcelPath, String inputExcelPath) throws Exception {
-        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,null, false);
+        ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0, -1, 1, -1, null, null, false, true, null, false);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
+        // Get existing sheets from the input Excel file
+        List<String> existingSheets = getSheetNames(inputExcelPath);
 
-        for( ConfigurableExcel parameters : queryConfigList  ){
-                List<List<String>> excelData;
+        // Check for sheet modifications
+        checkSheetModifications(queryConfigList, existingSheets);
 
-            if (parameters.getSheetRange().isEmpty()|| parameters.getSheetRange()==null){
+
+        // Check for sheet modifications
+        for (ConfigurableExcel parameters : queryConfigList) {
+            List<List<String>> excelData;
+
+            if (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null) {
                 excelData = queryExcelData(inputExcelPath, parameters);
-            }
-            else{
+            } else {
                 excelData = specificRange(inputExcelPath, parameters);
             }
-            if (parameters.isDeleteAvailable()){
+            if (parameters.isDeleteAvailable()) {
                 excelData.add(addDeleteColumn(excelData));
             }
             if (parameters.isTranspose()) {
                 excelData = transposeData(excelData);
             }
-            writeCSV( parameters, excelData);
+            writeCSV(parameters, excelData);
         }
     }
 
+    // Function to get sheet names from the input Excel file
+    private List<String> getSheetNames(String inputExcelPath) throws IOException {
+        List<String> sheetNames = new ArrayList<>();
+        try (FileInputStream excelFile = new FileInputStream(inputExcelPath);
+             Workbook workbook = new XSSFWorkbook(excelFile)) {
+            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+                sheetNames.add(workbook.getSheetName(i));
+            }
+        }
+        return sheetNames;
+    }
     /**
      * Creates a directory based on the provided configurableExcel parameter's sheet path.
      *
      * @param parameter The configurableExcel object containing sheet information.
      * @return The absolute path of the directory where the file will be saved,
-     *         or an empty string if the sheet path is null.
+     * or an empty string if the sheet path is null.
      */
 
     private String createDirectory(ConfigurableExcel parameter) {
@@ -85,23 +102,22 @@ public class ExcelToCSV {
         try (FileInputStream excelFile = new FileInputStream(getExcelPath);
              Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet;
-            if (workbook.getNumberOfSheets()==1){
+            if (workbook.getNumberOfSheets() == 1) {
                 sheet = workbook.getSheetAt(0);
-            }else {
+            } else {
                 sheet = workbook.getSheet(parameters.getSheetName());
             }
-            if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
-            {
+            if (parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null)) {
                 parameters.setStartRow(2);
             }
-            if (parameters.getEndRow()==-1){
+            if (parameters.getEndRow() == -1) {
                 parameters.setEndRow(sheet.getLastRowNum());
             }
-            if (parameters.getEndColumn()==-1){
-                parameters.setEndColumn(maxColumn(sheet,parameters));
+            if (parameters.getEndColumn() == -1) {
+                parameters.setEndColumn(maxColumn(sheet, parameters));
             }
             if (parameters.isComment()) {
-                parameters.setEndColumn(parameters.getEndColumn()+1);
+                parameters.setEndColumn(parameters.getEndColumn() + 1);
             }
             for (int rowIndex = parameters.getStartRow(); rowIndex <= parameters.getEndRow(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
@@ -125,13 +141,13 @@ public class ExcelToCSV {
      *
      * @param excelData The original two-dimensional list of strings to transpose.
      * @return A transposed two-dimensional list of strings, where rows become columns and vice versa.
-     *         Returns an empty list if excelData is empty or null.
+     * Returns an empty list if excelData is empty or null.
      */
 
-    private List<List<String>> transposeData(List<List<String>> excelData ) {
+    private List<List<String>> transposeData(List<List<String>> excelData) {
 
         List<List<String>> transposedData = new ArrayList<>();
-        if (excelData == null || excelData.isEmpty()){
+        if (excelData == null || excelData.isEmpty()) {
             return transposedData;
         }
         int rowCount = excelData.size();
@@ -156,12 +172,13 @@ public class ExcelToCSV {
 
     /**
      * Add an extra Deleted Column in some file if needed
+     *
      * @param excelData The original two-dimensional list of strings in which an extra Delete column need to be added.
      * @return A list of Excel Data with an extra Delete Column along its default value 'False'.
      */
     private List<String> addDeleteColumn(List<List<String>> excelData) {
         List<String> addDeleteColumn = new ArrayList<>();
-        if (excelData == null || excelData.isEmpty()){
+        if (excelData == null || excelData.isEmpty()) {
             return addDeleteColumn;
         }
         int colCount = 0;
@@ -171,9 +188,9 @@ public class ExcelToCSV {
             }
         }
         for (int j = 0; j < colCount; j++) {
-            if (j==0) {
+            if (j == 0) {
                 addDeleteColumn.add("deleted");
-            }else{
+            } else {
                 addDeleteColumn.add("False");
             }
         }
@@ -196,13 +213,12 @@ public class ExcelToCSV {
                 endColumn = row.getLastCellNum();
             }
         }
-        return endColumn-1;
+        return endColumn - 1;
     }
 
     /**
-     *
      * @param parameters The configurableExcel object containing parameters for particular sheet.
-     * @param excelData The original two-dimensional list of strings which used to store the Excel Data.
+     * @param excelData  The original two-dimensional list of strings which used to store the Excel Data.
      * @throws IOException If an I/O error occurs while writing the Excel file into CSV file.
      */
 
@@ -216,7 +232,7 @@ public class ExcelToCSV {
                 for (int rowIndex = 1; rowIndex < excelData.size(); rowIndex++) {
                     List<String> row = excelData.get(rowIndex);
                     for (int i = 0; i < row.size(); i++) {
-                        if (row.get(i) != null){
+                        if (row.get(i) != null) {
                             writer.write(especialCharacters(row.get(i)));
                         } else {
                             writer.append("");
@@ -270,7 +286,7 @@ public class ExcelToCSV {
     private List<List<String>> specificRange(String inputExcelPath, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
-        if(parameters.getSheetRange().contains(",")) {
+        if (parameters.getSheetRange().contains(",")) {
             String[] range = parameters.getSheetRange().split(",");
             for (String rangeIndex : range) {
                 if (parameters.getSheetRange().contains("-")) {
@@ -349,7 +365,7 @@ public class ExcelToCSV {
      * @return A list of configurableExcel objects populated with data from configurableExcelData.
      */
 
-    private List<ConfigurableExcel> fillSheetParameter(List<List<String>>configurableExcelData){
+    private List<ConfigurableExcel> fillSheetParameter(List<List<String>> configurableExcelData) {
         List<ConfigurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
             List<String> rowData = configurableExcelData.get(rowIndex);
@@ -361,18 +377,52 @@ public class ExcelToCSV {
         return queryConfigList;
     }
 
-    public static void main(String[] args) {
 
+    private void checkSheetModifications(List<ConfigurableExcel> queryConfigList, List<String> existingSheets) throws Exception {
+        // Check for new sheets with missing CSV paths
+        for (ConfigurableExcel config : queryConfigList) {
+            if (config.getSheetPath() == null || config.getSheetPath().isEmpty()) {
+                throw new Exception("CSV Directory missing for the new sheet: " + config.getSheetName());
+            }
+        }
 
-        ExcelToCSV csvConverter = new ExcelToCSV();
-        String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
-        String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
-        try {
-            csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
-            System.out.println("EXCEL To CSV CONVERSION SUCCESSFULLY.");
-        } catch (Exception e) {
-            throw new NullPointerException();
+        // Check if any existing sheet has been removed
+        boolean sheetRemoved = isSheetRemoved(queryConfigList, existingSheets);
+
+        if (sheetRemoved) {
+            throw new Exception("CSV Directory specified for a  sheet which not exist.");
+        } else {
+            throw new Exception("No CSV Directory specified for any removed sheets.");
         }
     }
 
-}
+    private boolean isSheetRemoved(List<ConfigurableExcel> queryConfigList, List<String> existingSheets) {
+        for (String existingSheet : existingSheets) {
+            boolean sheetExists = false;
+            for (ConfigurableExcel config : queryConfigList) {
+                if (config.getSheetName().equals(existingSheet)) {
+                    sheetExists = true;
+                    break;
+                }
+            }
+            if (!sheetExists) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void main (String[]args){
+            ExcelToCSV csvConverter = new ExcelToCSV();
+            String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
+            String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
+            try {
+                csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
+                System.out.println("EXCEL To CSV CONVERSION SUCCESSFULLY.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.err.println("EXCEL To CSV CONVERSION FAILED: " + e.getMessage());
+            }
+        }
+
+    }
