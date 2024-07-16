@@ -8,10 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.logging.Logger;
 
 public class ExcelToCSV {
-    private static final Logger logger = Logger.getLogger(ExcelToCSV.class.getName());
     /**
      *
      * @param configurableExcelPath used to store the path of Configurable Excel
@@ -19,7 +17,7 @@ public class ExcelToCSV {
      * @throws IOException If an I/O error occurs while converting the Excel file.
      */
 
-    public void ExcelToCSVConverter(String configurableExcelPath, String inputExcelPath) throws IOException {
+    public void ExcelToCSVConverter(String configurableExcelPath, String inputExcelPath) throws Exception {
         ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0,-1,1,-1,null,null,false,true,null, false);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
@@ -30,16 +28,16 @@ public class ExcelToCSV {
             if (parameters.getSheetRange().isEmpty()|| parameters.getSheetRange()==null){
                 excelData = queryExcelData(inputExcelPath, parameters);
             }
-                else{
-                    excelData = specificRange(inputExcelPath, parameters);
-                }
-                if (parameters.isDeleteAvailable()){
-                    excelData.add(addDeleteColumn(excelData));
-                }
-                if (parameters.isTranspose()) {
-                    excelData = transposeData(excelData);
-                }
-                writeCSV( parameters, excelData);
+            else{
+                excelData = specificRange(inputExcelPath, parameters);
+            }
+            if (parameters.isDeleteAvailable()){
+                excelData.add(addDeleteColumn(excelData));
+            }
+            if (parameters.isTranspose()) {
+                excelData = transposeData(excelData);
+            }
+            writeCSV( parameters, excelData);
         }
     }
 
@@ -351,7 +349,7 @@ public class ExcelToCSV {
      * @return A list of configurableExcel objects populated with data from configurableExcelData.
      */
 
-    private List<ConfigurableExcel> fillSheetParameter(List<List<String>>configurableExcelData) {
+    private List<ConfigurableExcel> fillSheetParameter(List<List<String>>configurableExcelData){
         List<ConfigurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
             List<String> rowData = configurableExcelData.get(rowIndex);
@@ -370,8 +368,8 @@ public class ExcelToCSV {
         String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
         try {
             csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
-            logger.info("EXCEL To CSV CONVERSION SUCCESSFULLY");
-        } catch (IOException e) {
+            System.out.println("EXCEL To CSV CONVERSION SUCCESSFULLY.");
+        } catch (Exception e) {
             throw new NullPointerException();
         }
     }
