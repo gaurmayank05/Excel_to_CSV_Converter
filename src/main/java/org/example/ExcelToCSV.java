@@ -8,8 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class ExcelToCSV {
+    private static final Logger logger = Logger.getLogger(ExcelToCSV.class.getName());
 
     /**
      * @param configurableExcelPath used to store the path of Configurable Excel
@@ -21,15 +24,12 @@ public class ExcelToCSV {
         ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0, -1, 1, -1, null, null, false, true, null, false);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
-        // Get existing sheets from the input Excel file
-        List<String> existingSheets = getSheetNames(inputExcelPath);
 
-        // Check for sheet modifications
-        checkSheetModifications(queryConfigList, existingSheets);
 
 
         // Check for sheet modifications
         for (ConfigurableExcel parameters : queryConfigList) {
+            validateSheetAndPath(parameters);
             List<List<String>> excelData;
 
             if (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null) {
@@ -47,18 +47,28 @@ public class ExcelToCSV {
         }
     }
 
-    // Function to get sheet names from the input Excel file
-    private List<String> getSheetNames(String inputExcelPath) throws IOException {
-        List<String> sheetNames = new ArrayList<>();
-        try (FileInputStream excelFile = new FileInputStream(inputExcelPath);
-             Workbook workbook = new XSSFWorkbook(excelFile)) {
-            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-                sheetNames.add(workbook.getSheetName(i));
-            }
+
+    private void validateSheetAndPath(ConfigurableExcel parameters) throws Exception {
+        boolean isSheetNameEmpty = parameters.getSheetName() == null || parameters.getSheetName().isEmpty();
+        boolean isSheetPathEmpty = parameters.getSheetPath() == null || parameters.getSheetPath().isEmpty();
+
+        // Check if the sheet exists in the existing sheets
+
+        if (isSheetNameEmpty && !isSheetPathEmpty) {
+            // CSD sheet does not exist but CSV path exists
+            throw new Exception("CSD SHEET DOES NOT EXIST BUT CSV DIRECTORY PATH EXISTS:" + parameters.getSheetPath());
         }
-        return sheetNames;
+        if (!isSheetNameEmpty && isSheetPathEmpty) {
+            // CSD sheet exists but CSV path does not exist
+            throw new Exception(parameters.getSheetName()+" CSD SHEET  EXIST BUT CSV DIRECTORY PATH  NOT EXISTS "  );
+        }
+        if (isSheetNameEmpty&& isSheetPathEmpty) {
+            // Both CSD sheet and CSV path are empty
+            throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
+        }
     }
     /**
+     *
      * Creates a directory based on the provided configurableExcel parameter's sheet path.
      *
      * @param parameter The configurableExcel object containing sheet information.
@@ -378,51 +388,19 @@ public class ExcelToCSV {
     }
 
 
-    private void checkSheetModifications(List<ConfigurableExcel> queryConfigList, List<String> existingSheets) throws Exception {
-        // Check for new sheets with missing CSV paths
-        for (ConfigurableExcel config : queryConfigList) {
-            if (config.getSheetPath() == null || config.getSheetPath().isEmpty()) {
-                throw new Exception("CSV Directory missing for the new sheet: " + config.getSheetName());
-            }
-        }
-
-        // Check if any existing sheet has been removed
-        boolean sheetRemoved = isSheetRemoved(queryConfigList, existingSheets);
-
-        if (sheetRemoved) {
-            throw new Exception("CSV Directory specified for a  sheet which not exist.");
-        } else {
-            throw new Exception("No CSV Directory specified for any removed sheets.");
-        }
-    }
-
-    private boolean isSheetRemoved(List<ConfigurableExcel> queryConfigList, List<String> existingSheets) {
-        for (String existingSheet : existingSheets) {
-            boolean sheetExists = false;
-            for (ConfigurableExcel config : queryConfigList) {
-                if (config.getSheetName().equals(existingSheet)) {
-                    sheetExists = true;
-                    break;
-                }
-            }
-            if (!sheetExists) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static void main (String[]args){
-            ExcelToCSV csvConverter = new ExcelToCSV();
-            String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
-            String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
-            try {
-                csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
-                System.out.println("EXCEL To CSV CONVERSION SUCCESSFULLY.");
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("EXCEL To CSV CONVERSION FAILED: " + e.getMessage());
-            }
-        }
+        ExcelToCSV csvConverter = new ExcelToCSV();
+        String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
+        String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
+        try {
+            csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
+            System.out.println("EXCEL To CSV CONVERSION SUCCESSFULLY.");
+         } catch (Exception e) {
+        logger.log(Level.SEVERE, "EXCEL To CSV CONVERSION FAILED: " + e.getMessage());
 
     }
+
+}
+    }
+
+
