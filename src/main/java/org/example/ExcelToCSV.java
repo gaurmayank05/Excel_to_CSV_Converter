@@ -11,10 +11,11 @@ import java.util.regex.Pattern;
 
 public class ExcelToCSV {
     /**
-     *
-     * @throws IOException If an I/O error occurs while converting the Excel file.
+     * Converts specified sheets and ranges from an Excel file to CSV format based on a configurable Excel file.
+     * @param configurableExcel the name to the configurable Excel file containing the conversion parameters
+     * @param inputExcel the name to the input Excel file to be converted
+     * @throws Exception if an error occurs during the conversion process
      */
-
     public void ExcelToCSVConverter(String configurableExcel, String inputExcel) throws Exception {
         ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0, -1, 1, -1, null, null, false, true, null, false);
 
@@ -41,6 +42,12 @@ public class ExcelToCSV {
         }
     }
 
+    /**
+     * Validates the sheet name and CSV directory path in the provided parameters.
+     *
+     * @param parameters the configurable Excel parameters containing configurable excel details
+     * @throws Exception if there is an inconsistency between the sheet name and CSV directory path
+     */
     private void validateSheetAndPath(ConfigurableExcel parameters) throws Exception {
         boolean isSheetNameEmpty = parameters.getSheetName() == null || parameters.getSheetName().isEmpty();
         boolean isSheetPathEmpty = parameters.getSheetPath() == null || parameters.getSheetPath().isEmpty();
@@ -56,18 +63,20 @@ public class ExcelToCSV {
     }
 
     /**
-     * Queries data from an Excel file based on specified parameters.
+     * Queries the data from an Excel file based on the provided parameters.
      *
-     * @param getExcelPath The file path of the Excel workbook to query.
-     * @param parameters   The configurableExcel object containing parameters for querying data.
-     * @return A list of lists representing the queried data from the Excel sheet.
-     * @throws IOException If an I/O error occurs while reading the Excel file.
+     * @param getExcelPath the InputStream of the Excel files either configurable Excel file or data Excel file
+     * @param parameters the configurable Excel parameters for querying the data
+     * @return a list of lists, where each inner list represents a row of data from the Excel file
+     * @throws IOException if an error occurs while reading the Excel file
      */
 
     private List<List<String>> queryExcelData(InputStream getExcelPath, ConfigurableExcel parameters) throws IOException {
         List<List<String>> excelData = new ArrayList<>();
         try {
             Workbook workbook = new XSSFWorkbook(getExcelPath);
+
+            // Get the sheet to be processed based on the provided parameters
             Sheet sheet = getSheet(workbook, parameters);
             if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
             {
@@ -102,15 +111,14 @@ public class ExcelToCSV {
     }
 
     /**
-     * Retrieves a Sheet from the provided Workbook based on the specified parameters.
+     * Retrieves the appropriate sheet from the workbook based on the provided parameters.
      *
-     * @param workbook    The Workbook from which to retrieve the Sheet.
-     * @param parameters  The ConfigurableExcel parameters containing additional configuration.
+     * @param workbook the workbook containing the sheets based on needed
+     * @param parameters the configurable Excel parameters containing the sheet name
      * @return            A Sheet object based on the conditions:
-     *                      - If the workbook has exactly one sheet, returns that sheet (only for Configurable Excel).
-     *                      - If the workbook has more than one sheet, returns the sheet with the name (for CSD Excel).
+     *                    - If the workbook has exactly one sheet, returns that sheet (only for Configurable Excel).
+     *                    - If the workbook has more than one sheet, returns the sheet with the name (for CSD Excel).
      */
-
     private Sheet getSheet (Workbook workbook, ConfigurableExcel parameters){
         Sheet sheet;
         if (workbook.getNumberOfSheets() == 1) {
@@ -190,18 +198,18 @@ public class ExcelToCSV {
     }
 
     /**
-     * Write the data of an Excel sheet into CSV format.
+     * Writes the provided Excel data to a CSV file based on the parameters.
      *
      * @param parameters The configurableExcel object containing parameters for particular sheet.
-     * @param excelData The original two-dimensional list of strings which used to store the Excel Data.
-     * @throws IOException If an I/O error occurs while writing the Excel file into CSV file.
+     * @param excelData the data to be written to the CSV file
+     * @throws IOException if an error occurs while writing the CSV file
      */
-
     private void writeCSV(ConfigurableExcel parameters, List<List<String>> excelData) throws IOException {
 
         if (parameters.getSheetPath() != null) {
             String csvFilePath = createDirectory(parameters);
             try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(csvFilePath), StandardCharsets.UTF_8))) {
+                // Write the standardized header to the CSV file
                 standardizedHeader(writer, excelData);
                 for (int rowIndex = 1; rowIndex < excelData.size(); rowIndex++) {
                     List<String> row = excelData.get(rowIndex);
@@ -249,7 +257,6 @@ public class ExcelToCSV {
      * @param excelData The two-dimensional list representing Excel data, where the first list is assumed to be the header row.
      * @throws IOException If an I/O error occurs while writing to the BufferedWriter.
      */
-
     private void standardizedHeader(BufferedWriter writer, List<List<String>> excelData) throws IOException {
         List<String> excelHeaderData = excelData.get(0);
         for (int columnIndex = 0; columnIndex < excelHeaderData.size(); columnIndex++) {
@@ -269,22 +276,27 @@ public class ExcelToCSV {
      * Each range is processed separately and concatenated into a single two-dimensional list of strings.
      * for example: (3, 10-15), 8 etc.
      *
-     * @param parameters     The configurableExcel object containing parameters for row ranges.
-     * @return A two-dimensional list of strings representing the concatenated Excel data from specified row ranges.
-     * @throws IOException If an I/O error occurs while reading the Excel file or querying data.
+     * @param inputExcel the path to the input Excel file
+     * @param parameters the configurable Excel parameters containing the sheet range and other settings
+     * @return a list of lists, where each inner list represents a row of data from the specified ranges in the Excel file
+     * @throws IOException if an error occurs while reading the Excel file
      */
-
     private List<List<String>> specificRange(String inputExcel, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
+        // Split the sheet range parameter into individual ranges
         String[] range = parameters.getSheetRange().split(",");
         for (String rangeIndex : range) {
+            // Load the input Excel file from the resource folder
             InputStream inputExcelPath = getResourceAsStream(inputExcel);
+            // Parse the start row from the range and adjust for zero-based indexing
             startRow = Integer.parseInt(rangeIndex.split("-")[0].trim()) - 1;
+            // Parse the end row from the range if it exists, otherwise set it to the start row
             if (rangeIndex.contains("-")) {
                 endRow = Integer.parseInt(rangeIndex.split("-")[1].trim()) - 1;
             }
             else endRow=startRow;
+
             parameters.setStartRow(startRow);
             parameters.setEndRow(endRow);
             List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
@@ -301,7 +313,6 @@ public class ExcelToCSV {
      * @param cell The Excel Cell object from which to retrieve the value.
      * @return A string representation of the cell value.
      */
-
     private String getCellValueasString(Cell cell) {
         switch (cell.getCellType()) {
             case STRING:
@@ -325,7 +336,6 @@ public class ExcelToCSV {
      * @param cellValue The original cell value to escape special characters from.
      * @return The escaped cell value formatted for CSV.
      */
-
     private String especialCharacters(String cellValue) {
         cellValue = cellValue.replaceAll("\"", "\"\"");
         String regex = "[,\\n'/\\\\\"]";
@@ -344,7 +354,6 @@ public class ExcelToCSV {
      * @param configurableExcelData The two-dimensional list of strings containing data for configurableExcel objects.
      * @return A list of configurableExcel objects populated with data from configurableExcelData.
      */
-
     private List<ConfigurableExcel> fillSheetParameter(List<List<String>> configurableExcelData) {
         List<ConfigurableExcel> queryConfigList = new ArrayList<>();
         for (int rowIndex = 1; rowIndex < configurableExcelData.size(); rowIndex++) {
@@ -357,6 +366,12 @@ public class ExcelToCSV {
         return queryConfigList;
     }
 
+    /**
+     * Retrieves an InputStream for a resource file located in the classpath.
+     *
+     * @param resourcePath the path to the resource file within the classpath
+     * @return an InputStream for the specified resource file, or null if the resource is not found
+     */
     private InputStream getResourceAsStream(String resourcePath) {
         return (getClass().getClassLoader().getResourceAsStream(resourcePath));
     }
