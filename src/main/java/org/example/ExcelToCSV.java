@@ -23,7 +23,8 @@ public class ExcelToCSV {
 
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
-        //validateSheetAndPath(excelQueryParameters,queryConfigList);
+        validateSheetAndPath(queryConfigList, excelConfigurationList);
+
         for (ConfigurableExcel parameters : queryConfigList) {
             List<List<String>> excelData;
             InputStream inputExcelPath = getResourceAsStream(inputExcel);
