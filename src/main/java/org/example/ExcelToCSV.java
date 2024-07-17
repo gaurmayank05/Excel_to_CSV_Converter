@@ -8,12 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 public class ExcelToCSV {
-    private static final Logger logger = Logger.getLogger(ExcelToCSV.class.getName());
-
     /**
      *
      * @param configurableExcelPath used to store the path of Configurable Excel
@@ -25,14 +21,9 @@ public class ExcelToCSV {
         ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0, -1, 1, -1, null, null, false, true, null, false);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
-
-
-
-        // Check for sheet modifications
         for (ConfigurableExcel parameters : queryConfigList) {
             validateSheetAndPath(parameters);
             List<List<String>> excelData;
-
             if (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null) {
                 excelData = queryExcelData(inputExcelPath, parameters);
             } else {
@@ -48,55 +39,18 @@ public class ExcelToCSV {
         }
     }
 
-
     private void validateSheetAndPath(ConfigurableExcel parameters) throws Exception {
         boolean isSheetNameEmpty = parameters.getSheetName() == null || parameters.getSheetName().isEmpty();
         boolean isSheetPathEmpty = parameters.getSheetPath() == null || parameters.getSheetPath().isEmpty();
-
-        // Check if the sheet exists in the existing sheets
-
         if (isSheetNameEmpty && !isSheetPathEmpty) {
-            // CSD sheet does not exist but CSV path exists
             throw new Exception("CSD SHEET DOES NOT EXIST BUT CSV DIRECTORY PATH EXISTS:" + parameters.getSheetPath());
         }
         if (!isSheetNameEmpty && isSheetPathEmpty) {
-            // CSD sheet exists but CSV path does not exist
             throw new Exception(parameters.getSheetName()+" CSD SHEET  EXIST BUT CSV DIRECTORY PATH  NOT EXISTS "  );
         }
         if (isSheetNameEmpty) {
-            // Both CSD sheet and CSV path are empty
             throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
         }
-    }
-    /**
-     *
-     * Creates a directory based on the provided configurableExcel parameter's sheet path.
-     *
-     * @param parameter The configurableExcel object containing sheet information.
-     * @return The absolute path of the directory where the file will be saved,
-     *         or an empty string if the sheet path is null.
-     */
-
-    private String createDirectory(ConfigurableExcel parameter) {
-        String outputDirectory = "D://";
-        String absolutePath = "";
-
-        if (parameter.getSheetPath() != null) {
-            File file = new File(parameter.getSheetPath());
-            String directoryPath = file.getParent();
-            String csvFile = file.getName();
-            File folder = new File(outputDirectory + File.separator + directoryPath);
-
-            if (!folder.exists()) {
-                //noinspection ResultOfMethodCallIgnored
-                folder.mkdirs();
-            }
-            absolutePath = folder.getAbsolutePath() + File.separator + csvFile;
-        } else {
-            System.out.println("Warning: Sheet path is null. Returning empty directory path.");
-        }
-
-        return absolutePath;
     }
 
     /**
@@ -112,12 +66,7 @@ public class ExcelToCSV {
         List<List<String>> excelData = new ArrayList<>();
         try (FileInputStream excelFile = new FileInputStream(getExcelPath);
              Workbook workbook = new XSSFWorkbook(excelFile)) {
-            Sheet sheet;
-            if (workbook.getNumberOfSheets() == 1) {
-                sheet = workbook.getSheetAt(0);
-            }else {
-                sheet = workbook.getSheet(parameters.getSheetName());
-            }
+            Sheet sheet = getSheet(workbook, parameters);
             if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
             {
                 parameters.setStartRow(2);
@@ -149,6 +98,26 @@ public class ExcelToCSV {
     }
 
     /**
+     * Retrieves a Sheet from the provided Workbook based on the specified parameters.
+     *
+     * @param workbook    The Workbook from which to retrieve the Sheet.
+     * @param parameters  The ConfigurableExcel parameters containing additional configuration.
+     * @return            A Sheet object based on the conditions:
+     *                      - If the workbook has exactly one sheet, returns that sheet (only for Configurable Excel).
+     *                      - If the workbook has more than one sheet, returns the sheet with the name (for CSD Excel).
+     */
+
+    private Sheet getSheet (Workbook workbook, ConfigurableExcel parameters){
+        Sheet sheet;
+        if (workbook.getNumberOfSheets() == 1) {
+            sheet = workbook.getSheetAt(0);
+        }else {
+            sheet = workbook.getSheet(parameters.getSheetName());
+        }
+        return sheet;
+    }
+
+    /**
      * Transposes the given two-dimensional list of strings (Excel data).
      *
      * @param excelData The original two-dimensional list of strings to transpose.
@@ -157,7 +126,6 @@ public class ExcelToCSV {
      */
 
     private List<List<String>> transposeData(List<List<String>> excelData) {
-
         List<List<String>> transposedData = new ArrayList<>();
         if (excelData == null || excelData.isEmpty()) {
             return transposedData;
@@ -172,7 +140,6 @@ public class ExcelToCSV {
         for (int j = 0; j < colCount; j++) {
             List<String> row = new ArrayList<>();
             for (int i = 0; i < rowCount; i++) {
-
                 if (j < excelData.get(i).size()) {
                     row.add(excelData.get(i).get(j));
                 }
@@ -189,21 +156,14 @@ public class ExcelToCSV {
      */
     private List<String> addDeleteColumn(List<List<String>> excelData) {
         List<String> addDeleteColumn = new ArrayList<>();
-        if (excelData == null || excelData.isEmpty()) {
-            return addDeleteColumn;
-        }
+        if (excelData == null || excelData.isEmpty()) return addDeleteColumn;
         int colCount = 0;
         for (List<String> row : excelData) {
-            if (row.size() > colCount) {
-                colCount = row.size();
-            }
+            if (row.size() > colCount) colCount = row.size();
         }
         for (int j = 0; j < colCount; j++) {
-            if (j == 0) {
-                addDeleteColumn.add("deleted");
-            } else {
-                addDeleteColumn.add("False");
-            }
+            if (j == 0) addDeleteColumn.add("deleted");
+             else addDeleteColumn.add("False");
         }
         return addDeleteColumn;
     }
@@ -220,14 +180,13 @@ public class ExcelToCSV {
         int endColumn = 0;
         for (int rowIndex = parameter.getStartRow(); rowIndex <= parameter.getEndRow(); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
-            if (row != null && row.getLastCellNum() > endColumn) {
-                endColumn = row.getLastCellNum();
-            }
+            if (row != null && row.getLastCellNum() > endColumn) endColumn = row.getLastCellNum();
         }
         return endColumn - 1;
     }
 
     /**
+     * Write the data of an Excel sheet into CSV format.
      *
      * @param parameters The configurableExcel object containing parameters for particular sheet.
      * @param excelData The original two-dimensional list of strings which used to store the Excel Data.
@@ -238,25 +197,45 @@ public class ExcelToCSV {
 
         if (parameters.getSheetPath() != null) {
             String csvFilePath = createDirectory(parameters);
-
             try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(csvFilePath), StandardCharsets.UTF_8))) {
                 standardizedHeader(writer, excelData);
                 for (int rowIndex = 1; rowIndex < excelData.size(); rowIndex++) {
                     List<String> row = excelData.get(rowIndex);
                     for (int i = 0; i < row.size(); i++) {
-                        if (row.get(i) != null) {
-                            writer.write(especialCharacters(row.get(i)));
-                        } else {
-                            writer.append("");
-                        }
-                        if (i < row.size() - 1) {
-                            writer.append(",");
-                        }
+                        if (row.get(i) != null) writer.write(especialCharacters(row.get(i)));
+                        else writer.append("");
+                        if (i < row.size() - 1) writer.append(",");
                     }
                     writer.newLine();
                 }
             }
         }
+    }
+
+    /**
+     * Creates a directory based on the provided configurableExcel parameter's sheet path.
+     *
+     * @param parameter The configurableExcel object containing sheet information.
+     * @return The absolute path of the directory where the file will be saved,
+     *         or an empty string if the sheet path is null.
+     */
+    private String createDirectory(ConfigurableExcel parameter) {
+        String outputDirectory = "D://";
+        String absolutePath = "";
+        if (parameter.getSheetPath() != null) {
+            File file = new File(parameter.getSheetPath());
+            String directoryPath = file.getParent();
+            String csvFile = file.getName();
+            File folder = new File(outputDirectory + File.separator + directoryPath);
+            if (!folder.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                folder.mkdirs();
+            }
+            absolutePath = folder.getAbsolutePath() + File.separator + csvFile;
+        } else {
+            System.out.println("Warning: Sheet path is null. Returning empty directory path.");
+        }
+        return absolutePath;
     }
 
     /**
@@ -269,15 +248,11 @@ public class ExcelToCSV {
 
     private void standardizedHeader(BufferedWriter writer, List<List<String>> excelData) throws IOException {
         List<String> excelHeaderData = excelData.get(0);
-
-
         for (int columnIndex = 0; columnIndex < excelHeaderData.size(); columnIndex++) {
             String headerData = excelHeaderData.get(columnIndex);
             if (headerData != null) {
-
                 headerData = headerData.replace("*", "").toLowerCase().replaceAll("\\s+", "_")
                         .replaceAll("_+$", "");
-
             }
             writer.append(headerData != null ? headerData : "");
             if (columnIndex < excelHeaderData.size() - 1) writer.append(",");
@@ -288,6 +263,7 @@ public class ExcelToCSV {
     /**
      * Retrieves Excel data from specific row ranges defined in parameters.getSheetRange().
      * Each range is processed separately and concatenated into a single two-dimensional list of strings.
+     * for example: (3, 10-15), 8 etc.
      *
      * @param inputExcelPath The file path of the Excel workbook to query.
      * @param parameters     The configurableExcel object containing parameters for row ranges.
@@ -298,42 +274,19 @@ public class ExcelToCSV {
     private List<List<String>> specificRange(String inputExcelPath, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
-//        if(parameters.getSheetRange().contains(",")) {
-            String[] range = parameters.getSheetRange().split(",");
-            for (String rangeIndex : range) {
-                if (parameters.getSheetRange().contains("-")) {
-
-                    startRow = Integer.parseInt(rangeIndex.split("-")[0].trim()) - 1;
-                    if (rangeIndex.contains("-")) {
-                        endRow = Integer.parseInt(rangeIndex.split("-")[1].trim()) - 1;
-                    } else {
-                        endRow = startRow;
-                    }
-                    parameters.setStartRow(startRow);
-                    parameters.setEndRow(endRow);
-                    List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
-                    if (excelData == null) {
-                        excelData = tempExcelData;
-                    } else {
-                        excelData.addAll(tempExcelData);
-                    }
-                }
-                else {
-                    startRow=Integer.parseInt(rangeIndex)-1;
-                    endRow=startRow;
-                    parameters.setStartRow(startRow);
-                    parameters.setEndRow(endRow);
-                    List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
-                    if (excelData == null) {
-                        excelData = tempExcelData;
-                    } else {
-                        excelData.addAll(tempExcelData);
-                    }
-                }
+        String[] range = parameters.getSheetRange().split(",");
+        for (String rangeIndex : range) {
+            startRow = Integer.parseInt(rangeIndex.split("-")[0].trim()) - 1;
+            if (rangeIndex.contains("-")) {
+                endRow = Integer.parseInt(rangeIndex.split("-")[1].trim()) - 1;
             }
-
-
-//        }
+            else endRow=startRow;
+            parameters.setStartRow(startRow);
+            parameters.setEndRow(endRow);
+            List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
+            if (excelData == null) excelData = tempExcelData;
+            else excelData.addAll(tempExcelData);
+        }
         return excelData;
     }
 
@@ -350,11 +303,8 @@ public class ExcelToCSV {
             case STRING:
                 return cell.getStringCellValue();
             case NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getDateCellValue().toString();
-                } else {
-                    return String.valueOf((int) cell.getNumericCellValue());
-                }
+                if (DateUtil.isCellDateFormatted(cell)) return cell.getDateCellValue().toString();
+                else return String.valueOf((int) cell.getNumericCellValue());
             case BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
             case FORMULA:
@@ -404,19 +354,15 @@ public class ExcelToCSV {
     }
 
     public static void main(String[] args) {
-
-
         ExcelToCSV csvConverter = new ExcelToCSV();
         String configurableExcelPath = "D://sourceFolder/CSD_TO_CSV.xlsx";
         String inputExcelPath = "D://sourceFolder//CSD - Internal.xlsx";
         try {
             csvConverter.ExcelToCSVConverter(configurableExcelPath, inputExcelPath);
-            System.out.println("EXCEL To CSV CONVERSION SUCCESSFULLY.");
-         } catch (Exception e) {
-        logger.log(Level.SEVERE, "EXCEL To CSV CONVERSION FAILED: " + e.getMessage());
-
+            System.out.println("EXCEL CONVERTED INTO CSV SUCCESSFULLY.");
+        } catch (Exception e) {
+            //noinspection CallToPrintStackTrace
+            e.printStackTrace();
+        }
     }
-
 }
-    }
-
