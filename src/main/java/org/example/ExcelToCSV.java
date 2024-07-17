@@ -63,7 +63,7 @@ public class ExcelToCSV {
             // CSD sheet exists but CSV path does not exist
             throw new Exception(parameters.getSheetName()+" CSD SHEET  EXIST BUT CSV DIRECTORY PATH  NOT EXISTS "  );
         }
-        if (isSheetNameEmpty&& isSheetPathEmpty) {
+        if (isSheetNameEmpty) {
             // Both CSD sheet and CSV path are empty
             throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
         }
@@ -298,7 +298,7 @@ public class ExcelToCSV {
     private List<List<String>> specificRange(String inputExcelPath, ConfigurableExcel parameters) throws IOException {
         int startRow, endRow;
         List<List<String>> excelData = null;
-        if (parameters.getSheetRange().contains(",")) {
+//        if(parameters.getSheetRange().contains(",")) {
             String[] range = parameters.getSheetRange().split(",");
             for (String rangeIndex : range) {
                 if (parameters.getSheetRange().contains("-")) {
@@ -331,7 +331,9 @@ public class ExcelToCSV {
                     }
                 }
             }
-        }
+
+
+//        }
         return excelData;
     }
 
