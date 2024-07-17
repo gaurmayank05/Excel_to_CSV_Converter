@@ -23,8 +23,8 @@ public class ExcelToCSV {
 
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
+        validateSheetAndPath(excelQueryParameters,queryConfigList);
         for (ConfigurableExcel parameters : queryConfigList) {
-            validateSheetAndPath(parameters);
             List<List<String>> excelData;
             InputStream inputExcelPath = getResourceAsStream(inputExcel);
             if (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null) {
@@ -43,24 +43,32 @@ public class ExcelToCSV {
     }
 
     /**
-     * Validates the sheet name and CSV directory path in the provided parameters.
+     * Validates the sheet names and paths in the configuration.
+     * Throws exceptions if any inconsistencies are found.
      *
-     * @param parameters the configurable Excel parameters containing configurable excel details
-     * @throws Exception if there is an inconsistency between the sheet name and CSV directory path
+     * @param queryConfigList    The list of configurable Excel parameters.
+     * @param configExcelList    The configuration data from the Excel file.
+     * @throws Exception If any validation fails.
      */
-    private void validateSheetAndPath(ConfigurableExcel parameters) throws Exception {
-        boolean isSheetNameEmpty = parameters.getSheetName() == null || parameters.getSheetName().isEmpty();
-        boolean isSheetPathEmpty = parameters.getSheetPath() == null || parameters.getSheetPath().isEmpty();
-        if (isSheetNameEmpty && !isSheetPathEmpty) {
-            throw new Exception("CSD SHEET DOES NOT EXIST BUT CSV DIRECTORY PATH EXISTS:" + parameters.getSheetPath());
+    private void validateSheetAndPath(List<ConfigurableExcel> queryConfigList, List<List<String>> configExcelList) throws Exception {
+        for (List<String> rowData : configExcelList) {
+            if (rowData.stream().allMatch(String::isEmpty)) {
+                throw new Exception("CONFIGURABLE EXCEL SHEET CONTAINS BLANK ROWS");
+            }
         }
-        if (!isSheetNameEmpty && isSheetPathEmpty) {
-            throw new Exception(parameters.getSheetName()+" CSD SHEET  EXIST BUT CSV DIRECTORY PATH  NOT EXISTS "  );
+        for (ConfigurableExcel parameters : queryConfigList) {
+            boolean isSheetNameEmpty = parameters.getSheetName() == null || parameters.getSheetName().isEmpty();
+            boolean isSheetPathEmpty = parameters.getSheetPath() == null || parameters.getSheetPath().isEmpty();
+            if (isSheetNameEmpty && !isSheetPathEmpty) {
+                throw new Exception("CSD SHEET DOES NOT EXIST BUT CSV DIRECTORY PATH EXISTS:" + parameters.getSheetPath());
+            }
+            if (!isSheetNameEmpty && isSheetPathEmpty) {
+                throw new Exception(parameters.getSheetName() + " CSD SHEET EXISTS BUT CSV DIRECTORY PATH DOES NOT EXIST");
+            }
+            if (isSheetNameEmpty) {
+                throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
+            }
         }
-        if (isSheetNameEmpty) {
-            throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
-        }
-    }
 
     /**
      * Queries the data from an Excel file based on the provided parameters.
