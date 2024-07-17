@@ -23,7 +23,7 @@ public class ExcelToCSV {
 
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
-        validateSheetAndPath(excelQueryParameters,queryConfigList);
+        //validateSheetAndPath(excelQueryParameters,queryConfigList);
         for (ConfigurableExcel parameters : queryConfigList) {
             List<List<String>> excelData;
             InputStream inputExcelPath = getResourceAsStream(inputExcel);
@@ -69,7 +69,7 @@ public class ExcelToCSV {
                 throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
             }
         }
-
+    }
     /**
      * Queries the data from an Excel file based on the provided parameters.
      *
