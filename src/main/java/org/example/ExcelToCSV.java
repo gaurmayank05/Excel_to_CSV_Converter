@@ -42,14 +42,7 @@ public class ExcelToCSV {
         configurableExcelPath.close();
     }
 
-    /**
-     * Validates the sheet names and paths in the configuration.
-     * Throws exceptions if any inconsistencies are found.
-     *
-     * @param queryConfigList    The list of configurable Excel parameters.
-     * @param configExcelList    The configuration data from the Excel file.
-     * @throws Exception If any validation fails.
-     */
+
     private void validateSheetAndPath(List<ConfigurableExcel> queryConfigList, List<List<String>> configExcelList) throws Exception {
         for (List<String> rowData : configExcelList) {
             if (rowData.stream().allMatch(String::isEmpty)) {
