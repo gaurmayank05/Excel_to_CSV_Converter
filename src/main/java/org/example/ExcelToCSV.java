@@ -18,7 +18,9 @@ public class ExcelToCSV {
      */
     public void ExcelToCSVConverter(String configurableExcel, String inputExcel) throws Exception {
         ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0, -1, 1, -1, null, null, false, true, null, false);
+
         InputStream configurableExcelPath = getResourceAsStream(configurableExcel);
+
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
         //validateSheetAndPath(excelQueryParameters,queryConfigList);
@@ -37,9 +39,7 @@ public class ExcelToCSV {
                 excelData = transposeData(excelData);
             }
             writeCSV(parameters, excelData);
-            inputExcelPath.close();
         }
-        configurableExcelPath.close();
     }
 
 
@@ -69,20 +69,25 @@ public class ExcelToCSV {
      * @param getExcelPath the InputStream of the Excel files either configurable Excel file or data Excel file
      * @param parameters the configurable Excel parameters for querying the data
      * @return a list of lists, where each inner list represents a row of data from the Excel file
+     * @throws IOException if an error occurs while reading the Excel file
      */
 
-    private List<List<String>> queryExcelData(InputStream getExcelPath, ConfigurableExcel parameters){
+    private List<List<String>> queryExcelData(InputStream getExcelPath, ConfigurableExcel parameters) throws IOException {
         List<List<String>> excelData = new ArrayList<>();
-        try (getExcelPath; Workbook workbook = new XSSFWorkbook(getExcelPath)) {
+        try {
+            Workbook workbook = new XSSFWorkbook(getExcelPath);
+
+            // Get the sheet to be processed based on the provided parameters
             Sheet sheet = getSheet(workbook, parameters);
-            if (parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange() == null)) {
+            if(parameters.isTranspose() && (parameters.getSheetRange().isEmpty() || parameters.getSheetRange()==null))
+            {
                 parameters.setStartRow(2);
             }
-            if (parameters.getEndRow() == -1) {
+            if (parameters.getEndRow()==-1){
                 parameters.setEndRow(sheet.getLastRowNum());
             }
-            if (parameters.getEndColumn() == -1) {
-                parameters.setEndColumn(maxColumn(sheet, parameters));
+            if (parameters.getEndColumn()==-1){
+                parameters.setEndColumn(maxColumn(sheet,parameters));
             }
             if (parameters.isComment()) {
                 parameters.setEndColumn(parameters.getEndColumn() + 1);
@@ -100,8 +105,7 @@ public class ExcelToCSV {
                 }
                 excelData.add(rowData);
             }
-        } catch (IOException e) {
-            //noinspection CallToPrintStackTrace
+        }catch (IOException e){
             e.printStackTrace();
         }
         return excelData;
@@ -215,7 +219,7 @@ public class ExcelToCSV {
                         else writer.append("");
                         if (i < row.size() - 1) writer.append(",");
                     }
-                    if (rowIndex != excelData.size()-1) writer.newLine();
+                    writer.newLine();
                 }
             }
         }
@@ -299,7 +303,6 @@ public class ExcelToCSV {
             List<List<String>> tempExcelData = queryExcelData(inputExcelPath, parameters);
             if (excelData == null) excelData = tempExcelData;
             else excelData.addAll(tempExcelData);
-            inputExcelPath.close();
         }
         return excelData;
     }
