@@ -17,12 +17,14 @@ public class ExcelToCSV {
      * @throws Exception if an error occurs during the conversion process
      */
     public void ExcelToCSVConverter(String configurableExcel, String inputExcel) throws Exception {
+        ZipDirectory zipDirectory = new ZipDirectory();
+        String tempFolder = zipDirectory.createTempDirectory("tempCSV");
+        String zipDestinationFolder = "D://CSV.zip";
         ConfigurableExcel excelQueryParameters = new ConfigurableExcel(0, -1, 1, -1, null, null, false, true, null, false);
         InputStream configurableExcelPath = getResourceAsStream(configurableExcel);
         List<List<String>> excelConfigurationList = queryExcelData(configurableExcelPath, excelQueryParameters);
         List<ConfigurableExcel> queryConfigList = fillSheetParameter(excelConfigurationList);
         validateSheetAndPath(queryConfigList, excelConfigurationList);
-
         for (ConfigurableExcel parameters : queryConfigList) {
             List<List<String>> excelData;
             InputStream inputExcelPath = getResourceAsStream(inputExcel);
@@ -37,9 +39,12 @@ public class ExcelToCSV {
             if (parameters.isTranspose()) {
                 excelData = transposeData(excelData);
             }
-            writeCSV(parameters, excelData);
+            String csvFilePath = createDirectory(tempFolder, parameters);
+            writeCSV(parameters, excelData, csvFilePath);
             inputExcelPath.close();
         }
+        zipDirectory.zipFolder(tempFolder, zipDestinationFolder);
+        zipDirectory.deleteTempDirectory(tempFolder);
         configurableExcelPath.close();
     }
 
@@ -71,6 +76,7 @@ public class ExcelToCSV {
             }
         }
     }
+
     /**
      * Queries the data from an Excel file based on the provided parameters.
      *
@@ -78,7 +84,6 @@ public class ExcelToCSV {
      * @param parameters the configurable Excel parameters for querying the data
      * @return a list of lists, where each inner list represents a row of data from the Excel file
      */
-
     private List<List<String>> queryExcelData(InputStream getExcelPath, ConfigurableExcel parameters){
         List<List<String>> excelData = new ArrayList<>();
         try (getExcelPath; Workbook workbook = new XSSFWorkbook(getExcelPath)) {
@@ -207,12 +212,12 @@ public class ExcelToCSV {
      *
      * @param parameters The configurableExcel object containing parameters for particular sheet.
      * @param excelData the data to be written to the CSV file
+     * @param csvFilePath is used to store the path of temporary folder
      * @throws IOException if an error occurs while writing the CSV file
      */
-    private void writeCSV(ConfigurableExcel parameters, List<List<String>> excelData) throws IOException {
+    private void writeCSV(ConfigurableExcel parameters, List<List<String>> excelData, String csvFilePath) throws IOException {
 
         if (parameters.getSheetPath() != null) {
-            String csvFilePath = createDirectory(parameters);
             try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(csvFilePath), StandardCharsets.UTF_8))) {
                 // Write the standardized header to the CSV file
                 standardizedHeader(writer, excelData);
@@ -232,18 +237,19 @@ public class ExcelToCSV {
     /**
      * Creates a directory based on the provided configurableExcel parameter's sheet path.
      *
+     * @param destinationFolder is used to store the path of destinationFolder
+     *                          ( for below method it's used to store the path of temporary folder)
      * @param parameter The configurableExcel object containing sheet information.
      * @return The absolute path of the directory where the file will be saved,
      *         or an empty string if the sheet path is null.
      */
-    private String createDirectory(ConfigurableExcel parameter) {
-        String outputDirectory = "D://";
+    private String createDirectory(String destinationFolder, ConfigurableExcel parameter) {
         String absolutePath = "";
         if (parameter.getSheetPath() != null) {
             File file = new File(parameter.getSheetPath());
             String directoryPath = file.getParent();
             String csvFile = file.getName();
-            File folder = new File(outputDirectory + File.separator + directoryPath);
+            File folder = new File(destinationFolder + File.separator + directoryPath);
             if (!folder.exists()) {
                 //noinspection ResultOfMethodCallIgnored
                 folder.mkdirs();
