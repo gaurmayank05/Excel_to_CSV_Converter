@@ -165,7 +165,6 @@ public class ExcelToCSV {
             throw new Exception(sb.toString());
         }
     }
-
     /**
      * Queries the data from an Excel file based on the provided parameters.
      *
