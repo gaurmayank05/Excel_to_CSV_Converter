@@ -76,11 +76,12 @@ public class ExcelToCSV {
                 throw new Exception("CSD SHEET AND CSV DIRECTORY PATH DOES NOT EXIST");
             }
         }
+        // * Maps to keep track of blank rows and errors
         Map<String, List<Integer>> multipleBlankRowsMap = new HashMap<>();
         Map<String, Integer> singleBlankRowMap = new HashMap<>();
-        List<String> whitespaceErrors = new ArrayList<>();
         List<String> blankRowWhitespaceErrors = new ArrayList<>();
-        try (InputStream inputExcelPath = getResourceAsStream(inputExcel); Workbook workbook = new XSSFWorkbook(inputExcelPath)) {
+        try (InputStream inputExcelPath = getResourceAsStream(inputExcel);
+             Workbook workbook = new XSSFWorkbook(inputExcelPath)) {
             for (ConfigurableExcel parameters : queryConfigList) {
                 String sheetName = parameters.getSheetName();
                 Sheet sheet = workbook.getSheet(sheetName);
@@ -92,13 +93,14 @@ public class ExcelToCSV {
                     if (row != null) {
                         boolean isRowBlank = true;
                         boolean hasWhitespaceInBlankCell = false;
+                        StringBuilder rowWhitespaceErrors = new StringBuilder();
                         for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
                             Cell cell = row.getCell(cellIndex);
                             if (cell != null) {
                                 String cellValue = cell.toString();
                                 if (cellValue.trim().isEmpty() && !cellValue.isEmpty()) {
                                     hasWhitespaceInBlankCell = true;
-                                    whitespaceErrors.add("Whitespace in Sheet: " + sheetName + " at Row: " + (rowIndex + 1) + " Column: " + (cellIndex + 1));
+                                    rowWhitespaceErrors.append(" and Column: ").append(cellIndex + 1).append(" ");
                                 }
                                 if (cell.getCellType() != CellType.BLANK && !cellValue.trim().isEmpty()) {
                                     isRowBlank = false;
@@ -117,13 +119,14 @@ public class ExcelToCSV {
                                 singleBlankRowMap.put(sheetName, rowIndex + 1);
                             }
                             if (hasWhitespaceInBlankCell) {
-                                blankRowWhitespaceErrors.add("Whitespace in blank row in Sheet: " + sheetName + " at Row: " + (rowIndex + 1));
+                                blankRowWhitespaceErrors.add("Whitespace in New blank Row in Sheet: " + sheetName + " at Row: " + (rowIndex + 1) + rowWhitespaceErrors);
                             }
                         }
                     }
                 }
             }
         }
+        // * Build error messages
         StringBuilder sb = new StringBuilder();
         if (!multipleBlankRowsMap.isEmpty()) {
             sb.append("Multiple Blank Rows: ");
@@ -138,17 +141,7 @@ public class ExcelToCSV {
             }
             sb.append("Single Blank Row: ");
             for (Map.Entry<String, Integer> entry : singleBlankRowMap.entrySet()) {
-                sb.append("\nSheet: ").append(entry.getKey()).append(" Row: ").append(entry.getValue());
-            }
-            sb.append("\n");
-        }
-        if (!whitespaceErrors.isEmpty()) {
-            if (!sb.isEmpty()) {
-                sb.append("\n");
-            }
-            sb.append("Whitespace errors found in existing rows: ");
-            for (String error : whitespaceErrors) {
-                sb.append("\n").append(error);
+                sb.append("\nSheet: ").append(entry.getKey()).append(" Row:").append(entry.getValue());
             }
             sb.append("\n");
         }
@@ -165,6 +158,7 @@ public class ExcelToCSV {
             throw new Exception(sb.toString());
         }
     }
+
     /**
      * Queries the data from an Excel file based on the provided parameters.
      *
