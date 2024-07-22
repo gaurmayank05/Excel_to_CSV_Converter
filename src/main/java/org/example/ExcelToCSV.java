@@ -127,35 +127,36 @@ public class ExcelToCSV {
             }
         }
         // * Build error messages
-        StringBuilder sb = new StringBuilder();
+        StringBuilder errorSummary = new StringBuilder();
+
         if (!multipleBlankRowsMap.isEmpty()) {
-            sb.append("Multiple Blank Rows: ");
+            errorSummary.append("Multiple Blank Rows: ");
             for (Map.Entry<String, List<Integer>> entry : multipleBlankRowsMap.entrySet()) {
-                sb.append("\nSheet: ").append(entry.getKey()).append(" Rows: ").append(entry.getValue());
+                errorSummary.append("\nSheet: ").append(entry.getKey()).append(" Rows: ").append(entry.getValue());
             }
-            sb.append("\n");
+            errorSummary.append("\n");
         }
         if (!singleBlankRowMap.isEmpty()) {
-            if (!sb.isEmpty()) {
-                sb.append("\n");
+            if (!errorSummary.isEmpty()) {
+                errorSummary.append("\n");
             }
-            sb.append("Single Blank Row: ");
+            errorSummary.append("Single Blank Row: ");
             for (Map.Entry<String, Integer> entry : singleBlankRowMap.entrySet()) {
-                sb.append("\nSheet: ").append(entry.getKey()).append(" Row:").append(entry.getValue());
+                errorSummary.append("\nSheet: ").append(entry.getKey()).append(" Row:").append(entry.getValue());
             }
-            sb.append("\n");
+            errorSummary.append("\n");
         }
         if (!blankRowWhitespaceErrors.isEmpty()) {
-            if (!sb.isEmpty()) {
-                sb.append("\n");
+            if (!errorSummary.isEmpty()) {
+                errorSummary.append("\n");
             }
-            sb.append("Whitespace errors found in blank rows: ");
+            errorSummary.append("Whitespace errors found in blank rows: ");
             for (String error : blankRowWhitespaceErrors) {
-                sb.append("\n").append(error);
+                errorSummary.append("\n").append(error);
             }
         }
-        if (!sb.isEmpty()) {
-            throw new Exception(sb.toString());
+        if (!errorSummary.isEmpty()) {
+            throw new Exception(errorSummary.toString());
         }
     }
 
