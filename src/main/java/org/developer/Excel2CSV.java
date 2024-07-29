@@ -182,7 +182,7 @@ public class Excel2CSV {
                 parameters.setEndRow(sheet.getLastRowNum());
             }
             if (parameters.getEndColumn() == -1) {
-                parameters.setEndColumn(excelUtils.maxColumn(sheet, parameters));
+                parameters.setEndColumn(excelUtils.getMaxColumn(sheet)-1);
             }
             if (parameters.isComment()) {
                 parameters.setEndColumn(parameters.getEndColumn() + 1);

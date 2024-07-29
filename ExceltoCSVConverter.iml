@@ -2,7 +2,7 @@
 <module version="4">
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$" dumb="true">
-      <sourceFolder url="file://$MODULE_DIR$/src/main/java/org/example/Resource" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/java/org/developer/Resource" type="java-resource" />
     </content>
   </component>
 </module>
