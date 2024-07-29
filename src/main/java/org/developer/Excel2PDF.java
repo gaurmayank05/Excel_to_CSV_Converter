@@ -1,7 +1,6 @@
 package org.developer;
 
 import com.itextpdf.text.*;
-//import com.itextpdf.text.Font;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -10,7 +9,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,22 +31,18 @@ public class Excel2PDF {
         try (FileInputStream excelFile = new FileInputStream(excelFilePath);
              Workbook workbook = new XSSFWorkbook(excelFile);
              FileOutputStream pdfFile = new FileOutputStream(pdfFilePath)) {
-
             Document document = new Document(PageSize.A4.rotate());
             PdfWriter.getInstance(document, pdfFile);
             document.open();
-
             for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
                 Sheet sheet = workbook.getSheetAt(sheetIndex);
                 int maxColumns = getMaxColumns(sheet);
                 PdfPTable table = createTable(sheet, maxColumns, document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin(), defaultFontSize);
-
                 document.add(table);
                 if (sheetIndex < workbook.getNumberOfSheets() - 1) {
                     document.newPage();
                 }
             }
-
             document.close();
         }
     }
@@ -66,7 +60,6 @@ public class Excel2PDF {
         PdfPTable table = new PdfPTable(maxColumns);
         table.setWidthPercentage(100);
         table.setWidths(getScaledColumnWidths(sheet, maxColumns, pdfWidth));
-
         for (Row row : sheet) {
             for (int cellIndex = 0; cellIndex < maxColumns; cellIndex++) {
                 Cell cell = (row != null) ? row.getCell(cellIndex) : null;
@@ -74,7 +67,6 @@ public class Excel2PDF {
                 table.addCell(pdfCell);
             }
         }
-
         applyMergedRegions(sheet, table);
         return table;
     }
@@ -86,12 +78,10 @@ public class Excel2PDF {
             columnWidths[i] = sheet.getColumnWidthInPixels(i);
             totalWidth += columnWidths[i];
         }
-
         float scale = pdfWidth / totalWidth;
         for (int i = 0; i < columnWidths.length; i++) {
             columnWidths[i] *= scale;
         }
-
         return columnWidths;
     }
 
@@ -99,7 +89,6 @@ public class Excel2PDF {
         String cellValue = getCellValueAsString(cell);
         Font font = getFont(cell, defaultFontSize);
         PdfPCell pdfCell = new PdfPCell(new Phrase(cellValue, font));
-
         setCellAlignment(cell, pdfCell);
         setBackgroundColor(cell, pdfCell);
         return pdfCell;
@@ -113,9 +102,8 @@ public class Excel2PDF {
     private static Font getFont(Cell cell, int defaultFontSize) {
         CellStyle cellStyle = cell.getCellStyle();
         org.apache.poi.ss.usermodel.Font cellFont = cell.getSheet().getWorkbook().getFontAt(cellStyle.getFontIndexAsInt());
-
         Font font = new Font();
-        font.setSize(defaultFontSize);
+        font.setSize(6);
         font.setStyle(getFontStyle(cellFont));
         font.setFamily(getFontFamily(cellFont));
 
@@ -151,6 +139,7 @@ public class Excel2PDF {
             case BOTTOM -> pdfCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
             default -> pdfCell.setVerticalAlignment(Element.ALIGN_UNDEFINED);
         }
+        pdfCell.setRotation(cellStyle.getRotation());
     }
 
     private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
