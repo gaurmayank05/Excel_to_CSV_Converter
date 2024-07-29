@@ -17,27 +17,30 @@ import java.util.List;
 public class Excel2PDF {
 
     public static void main(String[] args) {
-        String excelFilePath = "D://sourceFolder//CSD - Internal.xlsx";
+        String excelFilePath = "D://sourceFolder//oiginal CSD.xlsx";
         String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
-            convertExcelToPDF(excelFilePath, pdfFilePath, 10);
+            convertExcelToPDF(excelFilePath, pdfFilePath);
             System.out.println("Excel file converted to PDF successfully.");
         } catch (Exception e) {
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
 
-    public static void convertExcelToPDF(String excelFilePath, String pdfFilePath, int defaultFontSize) throws IOException, DocumentException {
+    public static void convertExcelToPDF(String excelFilePath, String pdfFilePath) throws IOException, DocumentException {
         try (FileInputStream excelFile = new FileInputStream(excelFilePath);
              Workbook workbook = new XSSFWorkbook(excelFile);
              FileOutputStream pdfFile = new FileOutputStream(pdfFilePath)) {
+            ExcelUtils excelUtils = new ExcelUtils();
             Document document = new Document(PageSize.A4.rotate());
             PdfWriter.getInstance(document, pdfFile);
             document.open();
             for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
                 Sheet sheet = workbook.getSheetAt(sheetIndex);
-                int maxColumns = getMaxColumns(sheet);
-                PdfPTable table = createTable(sheet, maxColumns, document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin(), defaultFontSize);
+                int maxColumns = excelUtils.getMaxColumn(sheet);
+                float pdfWidth = document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin();
+                PdfPTable table = createTable(sheet, maxColumns, pdfWidth);
                 document.add(table);
                 if (sheetIndex < workbook.getNumberOfSheets() - 1) {
                     document.newPage();
@@ -47,24 +50,22 @@ public class Excel2PDF {
         }
     }
 
-    private static int getMaxColumns(Sheet sheet) {
-        int maxCol = 0;
-        for (Row row : sheet) {
-            int lastCol = (row != null) ? row.getLastCellNum() : 0;
-            maxCol = Math.max(maxCol, lastCol);
-        }
-        return maxCol;
-    }
-
-    private static PdfPTable createTable(Sheet sheet, int maxColumns, float pdfWidth, int defaultFontSize) throws DocumentException {
+    private static PdfPTable createTable(Sheet sheet, int maxColumns, float pdfWidth) throws DocumentException {
         PdfPTable table = new PdfPTable(maxColumns);
         table.setWidthPercentage(100);
         table.setWidths(getScaledColumnWidths(sheet, maxColumns, pdfWidth));
+        PdfPCell pdfCell;
         for (Row row : sheet) {
-            for (int cellIndex = 0; cellIndex < maxColumns; cellIndex++) {
-                Cell cell = (row != null) ? row.getCell(cellIndex) : null;
-                PdfPCell pdfCell = (cell != null) ? createPdfCell(cell, defaultFontSize) : new PdfPCell();
-                table.addCell(pdfCell);
+            if (row != null) {
+                for (int cellIndex = 0; cellIndex < maxColumns; cellIndex++){
+                    Cell cell = row.getCell(cellIndex);
+                    if (cell != null){
+                        pdfCell = createPdfCell(cell, maxColumns);
+                    }else{
+                        pdfCell = new PdfPCell();
+                    }
+                    table.addCell(pdfCell);
+                }
             }
         }
         applyMergedRegions(sheet, table);
@@ -85,29 +86,32 @@ public class Excel2PDF {
         return columnWidths;
     }
 
-    private static PdfPCell createPdfCell(Cell cell, int defaultFontSize) {
-        String cellValue = getCellValueAsString(cell);
-        Font font = getFont(cell, defaultFontSize);
+    private static PdfPCell createPdfCell(Cell cell, int maxColumns) {
+        ExcelUtils excelUtils = new ExcelUtils();
+        String cellValue = excelUtils.getCellValueasString(cell);
+        Font font = getFont(cell, maxColumns);
         PdfPCell pdfCell = new PdfPCell(new Phrase(cellValue, font));
         setCellAlignment(cell, pdfCell);
         setBackgroundColor(cell, pdfCell);
         return pdfCell;
     }
 
-    private static String getCellValueAsString(Cell cell) {
-        DataFormatter formatter = new DataFormatter();
-        return formatter.formatCellValue(cell);
-    }
-
-    private static Font getFont(Cell cell, int defaultFontSize) {
+    private static Font getFont(Cell cell, int maxColumns) {
         CellStyle cellStyle = cell.getCellStyle();
+        //noinspection deprecation
         org.apache.poi.ss.usermodel.Font cellFont = cell.getSheet().getWorkbook().getFontAt(cellStyle.getFontIndexAsInt());
         Font font = new Font();
-        font.setSize(6);
+        font.setSize(applyFontSize(maxColumns));
         font.setStyle(getFontStyle(cellFont));
         font.setFamily(getFontFamily(cellFont));
-
         return font;
+    }
+
+    private static int applyFontSize(int maxColumns) {
+        if (maxColumns > 5){
+            return 6;
+        }
+        return 11;
     }
 
     private static String getFontFamily(org.apache.poi.ss.usermodel.Font cellFont) {
@@ -117,28 +121,52 @@ public class Excel2PDF {
 
     private static int getFontStyle(org.apache.poi.ss.usermodel.Font cellFont) {
         int style = Font.NORMAL;
-        if (cellFont.getBold()) style |= Font.BOLD;
-        if (cellFont.getItalic()) style |= Font.ITALIC;
-        if (cellFont.getStrikeout()) style |= Font.STRIKETHRU;
-        if (cellFont.getUnderline() == 1) style |= Font.UNDERLINE;
+        if (cellFont.getBold()) {
+            style = Font.BOLD;
+        }
+        if (cellFont.getItalic()) {
+            style = Font.ITALIC;
+        }
+        if (cellFont.getStrikeout()) {
+            style = Font.STRIKETHRU;
+        }
+        if (cellFont.getUnderline() == 1) {
+            style = Font.UNDERLINE;
+        }
         return style;
     }
 
     private static void setCellAlignment(Cell cell, PdfPCell pdfCell) {
         CellStyle cellStyle = cell.getCellStyle();
         switch (cellStyle.getAlignment()) {
-            case LEFT -> pdfCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-            case CENTER -> pdfCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            case RIGHT -> pdfCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            default -> pdfCell.setHorizontalAlignment(Element.ALIGN_UNDEFINED);
+            case LEFT:
+                pdfCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+                break;
+            case CENTER:
+                pdfCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                break;
+            case RIGHT:
+                pdfCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                break;
+            default:
+                pdfCell.setHorizontalAlignment(Element.ALIGN_UNDEFINED);
+                break;
         }
 
         switch (cellStyle.getVerticalAlignment()) {
-            case TOP -> pdfCell.setVerticalAlignment(Element.ALIGN_TOP);
-            case CENTER -> pdfCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            case BOTTOM -> pdfCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
-            default -> pdfCell.setVerticalAlignment(Element.ALIGN_UNDEFINED);
+            case TOP:
+                pdfCell.setVerticalAlignment(Element.ALIGN_TOP);
+                break;
+            case CENTER:
+                pdfCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                break;
+            case BOTTOM:
+                pdfCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
+                break;
+            default:
+                pdfCell.setVerticalAlignment(Element.ALIGN_UNDEFINED);
         }
+
         pdfCell.setRotation(cellStyle.getRotation());
     }
 
@@ -162,7 +190,6 @@ public class Excel2PDF {
             int endRow = region.getLastRow();
             int startCol = region.getFirstColumn();
             int endCol = region.getLastColumn();
-
             try {
                 PdfPCell mergedCell = table.getRow(startRow).getCells()[startCol];
                 if (mergedCell != null) {
