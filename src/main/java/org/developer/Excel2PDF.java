@@ -9,18 +9,19 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 public class Excel2PDF {
 
     public static void main(String[] args) {
-        String excelFilePath = "D://sourceFolder//oiginal CSD.xlsx";
+        ExcelUtils excelUtils = new ExcelUtils();
+        String excelFile = "CSD_Internal.xlsx";
         String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
-            convertExcelToPDF(excelFilePath, pdfFilePath);
+            convertExcelToPDF(excelUtils.getResourceAsStream(excelFile), pdfFilePath);
             System.out.println("Excel file converted to PDF successfully.");
         } catch (Exception e) {
             //noinspection CallToPrintStackTrace
@@ -28,9 +29,8 @@ public class Excel2PDF {
         }
     }
 
-    public static void convertExcelToPDF(String excelFilePath, String pdfFilePath) throws IOException, DocumentException {
-        try (FileInputStream excelFile = new FileInputStream(excelFilePath);
-             Workbook workbook = new XSSFWorkbook(excelFile);
+    public static void convertExcelToPDF(InputStream excelFilePath, String pdfFilePath) throws IOException, DocumentException {
+        try (excelFilePath; Workbook workbook = new XSSFWorkbook(excelFilePath);
              FileOutputStream pdfFile = new FileOutputStream(pdfFilePath)) {
             ExcelUtils excelUtils = new ExcelUtils();
             Document document = new Document(PageSize.A4.rotate());
@@ -75,13 +75,13 @@ public class Excel2PDF {
     private static float[] getScaledColumnWidths(Sheet sheet, int maxColumns, float pdfWidth) {
         float[] columnWidths = new float[maxColumns];
         float totalWidth = 0;
-        for (int i = 0; i < maxColumns; i++) {
-            columnWidths[i] = sheet.getColumnWidthInPixels(i);
-            totalWidth += columnWidths[i];
+        for (int columnIndex = 0; columnIndex < maxColumns; columnIndex++) {
+            columnWidths[columnIndex] = sheet.getColumnWidthInPixels(columnIndex);
+            totalWidth += columnWidths[columnIndex];
         }
         float scale = pdfWidth / totalWidth;
-        for (int i = 0; i < columnWidths.length; i++) {
-            columnWidths[i] *= scale;
+        for (int columnIndex = 0; columnIndex < columnWidths.length; columnIndex++) {
+            columnWidths[columnIndex] *= scale;
         }
         return columnWidths;
     }
@@ -108,9 +108,7 @@ public class Excel2PDF {
     }
 
     private static int applyFontSize(int maxColumns) {
-        if (maxColumns > 5){
-            return 6;
-        }
+        if (maxColumns > 5) return 6;
         return 11;
     }
 
@@ -196,10 +194,10 @@ public class Excel2PDF {
                     mergedCell.setRowspan(endRow - startRow + 1);
                     mergedCell.setColspan(endCol - startCol + 1);
 
-                    for (int i = 0; i <= endRow - startRow; i++) {
-                        for (int j = 0; j <= endCol - startCol; j++) {
-                            if (i != 0 || j != 0) {
-                                PdfPCell cellToClear = table.getRow(startRow + i).getCells()[startCol + j];
+                    for (int rowIndex = 0; rowIndex <= endRow - startRow; rowIndex++) {
+                        for (int cellIndex = 0; cellIndex <= endCol - startCol; cellIndex++) {
+                            if (rowIndex != 0 || cellIndex != 0) {
+                                PdfPCell cellToClear = table.getRow(startRow + rowIndex).getCells()[startCol + cellIndex];
                                 if (cellToClear != null) {
                                     cellToClear.setBorder(Rectangle.NO_BORDER);
                                 }
