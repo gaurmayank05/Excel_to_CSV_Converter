@@ -18,7 +18,7 @@ public class Excel2PDF {
 
     public static void main(String[] args) {
         ExcelUtils excelUtils = new ExcelUtils();
-        String excelFile = "CSD_Internal.xlsx";
+        String excelFile = "DV-SOP-003-TM-003 System Test Script Noesis 2.0 HF2 ST-059 v1.0.xlsx";
         String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
             convertExcelToPDF(excelUtils.getResourceAsStream(excelFile), pdfFilePath);
@@ -41,6 +41,7 @@ public class Excel2PDF {
                 int maxColumns = excelUtils.getMaxColumn(sheet);
                 float pdfWidth = document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin();
                 PdfPTable table = createTable(sheet, maxColumns, pdfWidth);
+                table.completeRow();
                 document.add(table);
                 if (sheetIndex < workbook.getNumberOfSheets() - 1) {
                     document.newPage();
