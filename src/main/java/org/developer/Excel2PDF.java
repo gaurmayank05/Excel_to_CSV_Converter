@@ -8,6 +8,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class Excel2PDF {
 
     public static void main(String[] args) {
         ExcelUtils excelUtils = new ExcelUtils();
-        String excelFile = "DV-SOP-003-TM-003 System Test Script Noesis 2.0 HF2 ST-059 v1.0.xlsx";
+        String excelFile = "CSD_Internal.xlsx";
         String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
             convertExcelToPDF(excelUtils.getResourceAsStream(excelFile), pdfFilePath);
@@ -102,10 +103,24 @@ public class Excel2PDF {
         //noinspection deprecation
         org.apache.poi.ss.usermodel.Font cellFont = cell.getSheet().getWorkbook().getFontAt(cellStyle.getFontIndexAsInt());
         Font font = new Font();
+        font.setColor(getFontColor(cellFont));
         font.setSize(applyFontSize(maxColumns));
         font.setStyle(getFontStyle(cellFont));
         font.setFamily(getFontFamily(cellFont));
         return font;
+    }
+
+    private static BaseColor getFontColor(org.apache.poi.ss.usermodel.Font cellFont) {
+        if (cellFont instanceof XSSFFont) {
+            XSSFColor xssfColor = ((XSSFFont) cellFont).getXSSFColor();
+            if (xssfColor != null) {
+                byte[] rgb = xssfColor.getRGB();
+                if (rgb != null){
+                    return new BaseColor(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
+                }
+            }
+        }
+        return BaseColor.BLACK;
     }
 
     private static int applyFontSize(int maxColumns) {
@@ -208,6 +223,7 @@ public class Excel2PDF {
                 }
             } catch (Exception e) {
                 System.out.println("Error in merging regions: " + region.formatAsString() + " in sheet: " + sheet.getSheetName());
+                e.printStackTrace();
             }
         }
     }
