@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import com.itextpdf.text.pdf.BaseFont;
 
 public class Excel2PDF {
 
@@ -107,9 +108,14 @@ public class Excel2PDF {
         font.setSize(applyFontSize(maxColumns));
         font.setStyle(getFontStyle(cellFont));
         font.setFamily(getFontFamily(cellFont));
+            try {
+                BaseFont baseFont = BaseFont.createFont("arial-unicode-ms.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                font = new Font(baseFont, font.getSize(), font.getStyle(), font.getColor());
+            } catch (DocumentException | IOException e) {
+                e.printStackTrace();
+            }
         return font;
     }
-
     private static BaseColor getFontColor(org.apache.poi.ss.usermodel.Font cellFont) {
         if (cellFont instanceof XSSFFont) {
             XSSFColor xssfColor = ((XSSFFont) cellFont).getXSSFColor();
