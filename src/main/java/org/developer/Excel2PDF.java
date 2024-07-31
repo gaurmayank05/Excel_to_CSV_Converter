@@ -2,6 +2,7 @@ package org.developer;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.Font;
+import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -10,18 +11,18 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import com.itextpdf.text.pdf.BaseFont;
 
 public class Excel2PDF {
 
     public static void main(String[] args) {
         ExcelUtils excelUtils = new ExcelUtils();
         String excelFile = "CSD_Internal.xlsx";
-          String pdfFilePath = "D://convertedPDF//CSD.pdf";
+        String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
             convertExcelToPDF(excelUtils.getResourceAsStream(excelFile), pdfFilePath);
             System.out.println("Excel file converted to PDF successfully.");
@@ -32,7 +33,7 @@ public class Excel2PDF {
     }
 
     public static void convertExcelToPDF(InputStream excelFilePath, String pdfFilePath) throws IOException, DocumentException {
-        try (excelFilePath; Workbook workbook = new XSSFWorkbook(excelFilePath);
+        try (Workbook workbook = new XSSFWorkbook(excelFilePath);
              FileOutputStream pdfFile = new FileOutputStream(pdfFilePath)) {
             ExcelUtils excelUtils = new ExcelUtils();
             Document document = new Document(PageSize.A4.rotate());
@@ -43,7 +44,6 @@ public class Excel2PDF {
                 int maxColumns = excelUtils.getMaxColumn(sheet);
                 float pdfWidth = document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin();
                 PdfPTable table = createTable(sheet, maxColumns, pdfWidth);
-                table.completeRow();
                 document.add(table);
                 if (sheetIndex < workbook.getNumberOfSheets() - 1) {
                     document.newPage();
@@ -57,22 +57,32 @@ public class Excel2PDF {
         PdfPTable table = new PdfPTable(maxColumns);
         table.setWidthPercentage(100);
         table.setWidths(getScaledColumnWidths(sheet, maxColumns, pdfWidth));
-        PdfPCell pdfCell;
+        Row headerRow = sheet.getRow(0);
+        if (headerRow != null) {
+            addCellIntoTable(headerRow, maxColumns, table);
+            table.setHeaderRows(1);
+        }
         for (Row row : sheet) {
-            if (row != null) {
-                for (int cellIndex = 0; cellIndex < maxColumns; cellIndex++){
-                    Cell cell = row.getCell(cellIndex);
-                    if (cell != null){
-                        pdfCell = createPdfCell(cell, maxColumns);
-                    }else{
-                        pdfCell = new PdfPCell();
-                    }
-                    table.addCell(pdfCell);
-                }
+            if (row != null && row.getRowNum() != 0) {
+                addCellIntoTable(row, maxColumns, table);
             }
         }
         applyMergedRegions(sheet, table);
         return table;
+    }
+
+    private static void addCellIntoTable(Row headerRow, int maxColumns, PdfPTable table) {
+        for (int cellIndex = 0; cellIndex < maxColumns; cellIndex++) {
+            Cell cell = headerRow.getCell(cellIndex);
+            PdfPCell pdfCell;
+            if (cell != null) {
+                pdfCell = createPdfCell(cell, maxColumns);
+            } else {
+                pdfCell = new PdfPCell();
+            }
+            pdfCell.setMinimumHeight(headerRow.getHeightInPoints());
+            table.addCell(pdfCell);
+        }
     }
 
     private static float[] getScaledColumnWidths(Sheet sheet, int maxColumns, float pdfWidth) {
@@ -108,20 +118,22 @@ public class Excel2PDF {
         font.setSize(applyFontSize(maxColumns));
         font.setStyle(getFontStyle(cellFont));
         font.setFamily(getFontFamily(cellFont));
-            try {
-                BaseFont baseFont = BaseFont.createFont("arial-unicode-ms.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-                font = new Font(baseFont, font.getSize(), font.getStyle(), font.getColor());
-            } catch (DocumentException | IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            BaseFont baseFont = BaseFont.createFont("arial-unicode-ms.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            font = new Font(baseFont, font.getSize(), font.getStyle(), font.getColor());
+        } catch (DocumentException | IOException e) {
+            //noinspection CallToPrintStackTrace
+            e.printStackTrace();
+        }
         return font;
     }
+
     private static BaseColor getFontColor(org.apache.poi.ss.usermodel.Font cellFont) {
         if (cellFont instanceof XSSFFont) {
             XSSFColor xssfColor = ((XSSFFont) cellFont).getXSSFColor();
             if (xssfColor != null) {
                 byte[] rgb = xssfColor.getRGB();
-                if (rgb != null){
+                if (rgb != null) {
                     return new BaseColor(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
                 }
             }
@@ -130,8 +142,7 @@ public class Excel2PDF {
     }
 
     private static int applyFontSize(int maxColumns) {
-        if (maxColumns > 5) return 6;
-        return 11;
+        return maxColumns > 5 ? 7 : 11;
     }
 
     private static String getFontFamily(org.apache.poi.ss.usermodel.Font cellFont) {
@@ -229,6 +240,7 @@ public class Excel2PDF {
                 }
             } catch (Exception e) {
                 System.out.println("Error in merging regions: " + region.formatAsString() + " in sheet: " + sheet.getSheetName());
+                //noinspection CallToPrintStackTrace
                 e.printStackTrace();
             }
         }
