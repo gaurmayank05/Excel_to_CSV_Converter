@@ -72,16 +72,16 @@ public class Excel2PDF {
         return table;
     }
 
-    private static void addCellIntoTable(Row headerRow, int maxColumns, PdfPTable table) {
+    private static void addCellIntoTable(Row row, int maxColumns, PdfPTable table) {
         for (int cellIndex = 0; cellIndex < maxColumns; cellIndex++) {
-            Cell cell = headerRow.getCell(cellIndex);
+            Cell cell = row.getCell(cellIndex);
             PdfPCell pdfCell;
             if (cell != null) {
-                pdfCell = createPdfCell(cell, maxColumns);
+                pdfCell = addCellData(cell, row.getSheet().getLastRowNum(), maxColumns, (row.getRowNum() == 0));
             } else {
                 pdfCell = new PdfPCell();
             }
-            pdfCell.setMinimumHeight(headerRow.getHeightInPoints());
+            //pdfCell.setMinimumHeight(row.getHeightInPoints());
             table.addCell(pdfCell);
         }
     }
@@ -94,16 +94,18 @@ public class Excel2PDF {
             totalWidth += columnWidths[columnIndex];
         }
         float scale = pdfWidth / totalWidth;
+        if (scale > 1) scale = 1;
         for (int columnIndex = 0; columnIndex < columnWidths.length; columnIndex++) {
             columnWidths[columnIndex] *= scale;
         }
         return columnWidths;
     }
 
-    private static PdfPCell createPdfCell(Cell cell, int maxColumns) {
+    private static PdfPCell addCellData(Cell cell, int maxRow, int maxColumns, boolean isHeader) {
         ExcelUtils excelUtils = new ExcelUtils();
         String cellValue = excelUtils.getCellValueasString(cell);
         Font font = getFont(cell, maxColumns);
+        font.setSize(applyFontSize(maxRow, maxColumns, isHeader));
         PdfPCell pdfCell = new PdfPCell(new Phrase(cellValue, font));
         setCellAlignment(cell, pdfCell);
         setBackgroundColor(cell, pdfCell);
@@ -116,7 +118,6 @@ public class Excel2PDF {
         org.apache.poi.ss.usermodel.Font cellFont = cell.getSheet().getWorkbook().getFontAt(cellStyle.getFontIndexAsInt());
         Font font = new Font();
         font.setColor(getFontColor(cellFont));
-        font.setSize(applyFontSize(maxColumns));
         font.setStyle(getFontStyle(cellFont));
         font.setFamily(getFontFamily(cellFont));
         try {
@@ -142,8 +143,19 @@ public class Excel2PDF {
         return BaseColor.BLACK;
     }
 
-    private static int applyFontSize(int maxColumns) {
-        return maxColumns > 5 ? 7 : 11;
+    private static float applyFontSize(int maxRow, int maxColumns, boolean isHeader) {
+        final float BASE_FONT = 11;
+        final float MIN_FONT = 6;
+
+        float fontSize = BASE_FONT;
+        float fontReduction = ((float) maxColumns /10) + ((float) maxRow /20);
+        fontSize -= fontReduction;
+
+        if (fontSize < MIN_FONT) fontSize = MIN_FONT;
+        else if (fontSize > BASE_FONT) fontSize = BASE_FONT;
+
+        if (isHeader && fontSize < BASE_FONT) fontSize++;
+        return fontSize;
     }
 
     private static String getFontFamily(org.apache.poi.ss.usermodel.Font cellFont) {
