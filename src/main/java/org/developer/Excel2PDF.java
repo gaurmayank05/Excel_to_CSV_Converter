@@ -217,8 +217,7 @@ private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
             // Set background color to #BFBFBF
             pdfCell.setBackgroundColor(new BaseColor(191, 191, 191));
         }
-    }
-    else {
+    }else {
         // Get the background color from cell style
         short bgColorIndex = cell.getCellStyle().getFillForegroundColor();
         if (bgColorIndex != IndexedColors.AUTOMATIC.getIndex()) {
