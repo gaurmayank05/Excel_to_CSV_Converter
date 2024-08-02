@@ -8,6 +8,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -201,7 +202,23 @@ public class Excel2PDF {
         pdfCell.setRotation(cellStyle.getRotation());
     }
 
-    private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
+private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
+    // Create an instance of ExcelUtils to get cell values as strings
+    ExcelUtils excelUtils = new ExcelUtils();
+    // Get the current cell's row and column index
+    int rowIndex = cell.getRowIndex();
+    int columnIndex = cell.getColumnIndex();
+    // Get the cell value as a string using ExcelUtils
+    String cellValue = excelUtils.getCellValueasString(cell);
+    // Check for the specific condition to set background color
+    if (rowIndex == 0) {
+        // Check if the cell contains data (not empty)
+        if (!cellValue.isEmpty()) {
+            // Set background color to #BFBFBF
+            pdfCell.setBackgroundColor(new BaseColor(191, 191, 191));
+        }
+    } else {
+        // Get the background color from cell style
         short bgColorIndex = cell.getCellStyle().getFillForegroundColor();
         if (bgColorIndex != IndexedColors.AUTOMATIC.getIndex()) {
             XSSFColor bgColor = (XSSFColor) cell.getCellStyle().getFillForegroundColorColor();
@@ -213,6 +230,7 @@ public class Excel2PDF {
             }
         }
     }
+}
 
     private static void applyMergedRegions(Sheet sheet, PdfPTable table) {
         List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
