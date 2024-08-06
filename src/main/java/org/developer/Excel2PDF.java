@@ -22,7 +22,7 @@ public class Excel2PDF {
 
     public static void main(String[] args) {
         ExcelUtils excelUtils = new ExcelUtils();
-        String excelFile = "CSD_Internal.xlsx";
+        String excelFile = "CSD_Internal_test.xlsx";
         String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
             convertExcelToPDF(excelUtils.getResourceAsStream(excelFile), pdfFilePath);
@@ -93,7 +93,7 @@ public class Excel2PDF {
             columnWidths[columnIndex] = sheet.getColumnWidthInPixels(columnIndex);
             totalWidth += columnWidths[columnIndex];
         }
-        float scale = pdfWidth / totalWidth;
+        float scale = pdfWidth / totalWidth  ;
         if (scale > 1) scale = 1;
         for (int columnIndex = 0; columnIndex < columnWidths.length; columnIndex++) {
             columnWidths[columnIndex] *= scale;
@@ -104,7 +104,7 @@ public class Excel2PDF {
     private static PdfPCell addCellData(Cell cell, int maxRow, int maxColumns, boolean isHeader) {
         ExcelUtils excelUtils = new ExcelUtils();
         String cellValue = excelUtils.getCellValueasString(cell);
-        Font font = getFont(cell, maxColumns);
+        Font font = getFont(cell);
         font.setSize(applyFontSize(maxRow, maxColumns, isHeader));
         PdfPCell pdfCell = new PdfPCell(new Phrase(cellValue, font));
         setCellAlignment(cell, pdfCell);
@@ -112,7 +112,7 @@ public class Excel2PDF {
         return pdfCell;
     }
 
-    private static Font getFont(Cell cell, int maxColumns) {
+    private static Font getFont(Cell cell) {
         CellStyle cellStyle = cell.getCellStyle();
         //noinspection deprecation
         org.apache.poi.ss.usermodel.Font cellFont = cell.getSheet().getWorkbook().getFontAt(cellStyle.getFontIndexAsInt());
@@ -146,14 +146,11 @@ public class Excel2PDF {
     private static float applyFontSize(int maxRow, int maxColumns, boolean isHeader) {
         final float BASE_FONT = 11;
         final float MIN_FONT = 6;
-
         float fontSize = BASE_FONT;
-        float fontReduction = ((float) maxColumns /10) + ((float) maxRow /20);
+        float fontReduction = ((float) maxColumns /10) + ((float) maxRow /10);
         fontSize -= fontReduction;
-
         if (fontSize < MIN_FONT) fontSize = MIN_FONT;
         else if (fontSize > BASE_FONT) fontSize = BASE_FONT;
-
         if (isHeader && fontSize < BASE_FONT) fontSize++;
         return fontSize;
     }
@@ -196,7 +193,6 @@ public class Excel2PDF {
                 pdfCell.setHorizontalAlignment(Element.ALIGN_UNDEFINED);
                 break;
         }
-
         switch (cellStyle.getVerticalAlignment()) {
             case TOP:
                 pdfCell.setVerticalAlignment(Element.ALIGN_TOP);
@@ -210,39 +206,30 @@ public class Excel2PDF {
             default:
                 pdfCell.setVerticalAlignment(Element.ALIGN_UNDEFINED);
         }
-
         pdfCell.setRotation(cellStyle.getRotation());
     }
 
-private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
-    // Create an instance of ExcelUtils to get cell values as strings
-    ExcelUtils excelUtils = new ExcelUtils();
-    // Get the current cell's row and column index
-    int rowIndex = cell.getRowIndex();
-    int columnIndex = cell.getColumnIndex();
-    // Get the cell value as a string using ExcelUtils
-    String cellValue = excelUtils.getCellValueasString(cell);
-    // Check for the specific condition to set background color
-    if (rowIndex == 0) {
-        // Check if the cell contains data (not empty)
-        if (!cellValue.isEmpty()) {
-            // Set background color to #BFBFBF
-            pdfCell.setBackgroundColor(new BaseColor(191, 191, 191));
-        }
-    }else {
-        // Get the background color from cell style
-        short bgColorIndex = cell.getCellStyle().getFillForegroundColor();
-        if (bgColorIndex != IndexedColors.AUTOMATIC.getIndex()) {
-            XSSFColor bgColor = (XSSFColor) cell.getCellStyle().getFillForegroundColorColor();
-            if (bgColor != null) {
-                byte[] rgb = bgColor.getRGB();
-                if (rgb != null && rgb.length == 3) {
-                    pdfCell.setBackgroundColor(new BaseColor(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF));
+    private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
+        ExcelUtils excelUtils = new ExcelUtils();
+        int rowIndex = cell.getRowIndex();
+        String cellValue = excelUtils.getCellValueasString(cell);
+        if (rowIndex == 0) {
+            if (!cellValue.isEmpty()) {
+                pdfCell.setBackgroundColor(new BaseColor(191, 191, 191));
+            }
+        }else {
+            short bgColorIndex = cell.getCellStyle().getFillForegroundColor();
+            if (bgColorIndex != IndexedColors.AUTOMATIC.getIndex()) {
+                XSSFColor bgColor = (XSSFColor) cell.getCellStyle().getFillForegroundColorColor();
+                if (bgColor != null) {
+                    byte[] rgb = bgColor.getRGB();
+                    if (rgb != null && rgb.length == 3) {
+                        pdfCell.setBackgroundColor(new BaseColor(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF));
+                    }
                 }
             }
         }
     }
-}
 
     private static void applyMergedRegions(Sheet sheet, PdfPTable table) {
         List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
@@ -256,7 +243,6 @@ private static void setBackgroundColor(Cell cell, PdfPCell pdfCell) {
                 if (mergedCell != null) {
                     mergedCell.setRowspan(endRow - startRow + 1);
                     mergedCell.setColspan(endCol - startCol + 1);
-
                     for (int rowIndex = 0; rowIndex <= endRow - startRow; rowIndex++) {
                         for (int cellIndex = 0; cellIndex <= endCol - startCol; cellIndex++) {
                             if (rowIndex != 0 || cellIndex != 0) {

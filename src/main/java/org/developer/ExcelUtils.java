@@ -41,10 +41,22 @@ public class ExcelUtils {
      */
 
     protected int getMaxColumn(Sheet sheet) {
+        ExcelUtils excelUtils = new ExcelUtils();
         int maxCol = 0;
-        for (Row row : sheet) {
-            int lastCol = (row != null) ? row.getLastCellNum() : 0;
-            maxCol = Math.max(maxCol, lastCol);
+        Row firstRow = sheet.getRow(0);
+        if (firstRow != null) {
+            for (Cell cell : firstRow) {
+                if (cell != null && !excelUtils.getCellValueasString(cell).trim().isEmpty()) {
+                    maxCol = Math.max(maxCol, cell.getColumnIndex() + 1);
+                }
+            }
+        }
+        else {
+            for (Row row : sheet) {
+                if (row != null) {
+                    maxCol = Math.max(maxCol, row.getLastCellNum());
+                }
+            }
         }
         return maxCol;
     }
