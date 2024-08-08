@@ -8,7 +8,6 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -22,7 +21,7 @@ public class Excel2PDF {
 
     public static void main(String[] args) {
         ExcelUtils excelUtils = new ExcelUtils();
-        String excelFile = "CSD_Internal_test.xlsx";
+        String excelFile = "CSD_Internal.xlsx";
         String pdfFilePath = "D://convertedPDF//CSD.pdf";
         try {
             convertExcelToPDF(excelUtils.getResourceAsStream(excelFile), pdfFilePath);
@@ -81,7 +80,7 @@ public class Excel2PDF {
             } else {
                 pdfCell = new PdfPCell();
             }
-            //pdfCell.setMinimumHeight(row.getHeightInPoints());
+            pdfCell.setMinimumHeight(row.getHeightInPoints());
             table.addCell(pdfCell);
         }
     }
@@ -109,9 +108,10 @@ public class Excel2PDF {
         PdfPCell pdfCell = new PdfPCell(new Phrase(cellValue, font));
         setCellAlignment(cell, pdfCell);
         setBackgroundColor(cell, pdfCell);
+        // set the border width
+        pdfCell.setBorderWidth(1.0f);
         return pdfCell;
     }
-
     private static Font getFont(Cell cell) {
         CellStyle cellStyle = cell.getCellStyle();
         //noinspection deprecation
@@ -243,6 +243,7 @@ public class Excel2PDF {
                 if (mergedCell != null) {
                     mergedCell.setRowspan(endRow - startRow + 1);
                     mergedCell.setColspan(endCol - startCol + 1);
+//                    mergedCell.setBorderWidth(2f);
                     for (int rowIndex = 0; rowIndex <= endRow - startRow; rowIndex++) {
                         for (int cellIndex = 0; cellIndex <= endCol - startCol; cellIndex++) {
                             if (rowIndex != 0 || cellIndex != 0) {
